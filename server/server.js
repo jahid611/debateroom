@@ -26,8 +26,8 @@ mongoose.connect(process.env.MONGO_URI)
     .catch(err => console.error('❌ Erreur MongoDB:', err));
 
 // --- ROUTES API ---
-// app.use('/api/auth', require('./routes/auth'));
-// app.use('/api/video', require('./routes/video'));
+ app.use('/api/auth', require('./routes/auth'));
+ app.use('/api/video', require('./routes/video'));
 
 // --- SOCKET.IO (Chat Temps Réel) ---
 io.on('connection', (socket) => {
@@ -54,6 +54,42 @@ io.on('connection', (socket) => {
         io.to(data.roomId).emit('receive_message', newMsg);
     });
 });
+
+// Gestion des votes sécurisés
+    socket.on('send_vote', async (data) => {
+        // data = { roomId, choice ('valid' ou 'inting'), userId }
+        const { roomId, choice, userId } = data; // userId est l'email ou le pseudo unique
+
+        if (!userId) return;
+
+        const room = await Room.findOne({ slug: roomId });
+        if (!room) return;
+
+        // Logique anti-doublon et changement d'avis
+        const otherChoice = choice === 'valid' ? 'inting' : 'valid';
+
+        // 1. Si déjà voté pour l'autre choix, on enlève
+        if (room.votes[otherChoice].includes(userId)) {
+            room.votes[otherChoice] = room.votes[otherChoice].filter(id => id !== userId);
+        }
+
+        // 2. Si déjà voté pour ce choix, on ne fait rien (ou on enlève si tu veux permettre d'annuler)
+        if (!room.votes[choice].includes(userId)) {
+            room.votes[choice].push(userId);
+        }
+
+        await room.save();
+
+        // 3. Calculer les totaux pour le frontend
+        const countValid = room.votes.valid.length;
+        const countInting = room.votes.inting.length;
+
+        // Renvoyer à tout le monde
+        io.to(roomId).emit('update_votes', { 
+            valid: countValid, 
+            inting: countInting 
+        });
+    }); 
 
 // --- DEMARRAGE ---
 const PORT = process.env.PORT || 3001;

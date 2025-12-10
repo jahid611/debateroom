@@ -1231,16 +1231,14 @@
             el.classList.add('selected');
         }
 
-        function finishOnboarding() {
-            // Validate all games have rank and role selected
+        async function finishOnboarding() {
+            // 1. Validation visuelle (Ton code existant)
             let valid = true;
             selectedGames.forEach(id => {
                 const section = document.querySelector(`.detail-section:has([data-game="${id}"])`);
                 if (!section) return;
-                
                 const hasRank = section.querySelector('.rank-badge.selected');
                 const hasRole = section.querySelector('.role-chip.selected');
-                
                 if (!hasRank || !hasRole) valid = false;
             });
 
@@ -1249,12 +1247,67 @@
                 return;
             }
 
-            showToast('Profil configuré. Bienvenue dans l\'arène !', 'success');
-            
-            // Here you would typically send data to server
-            setTimeout(() => {
-                // Redirect or show success state
-            }, 2000);
+            // 2. RECUPERATION DES DONNÉES
+            // On récupère l'email stocké lors du login Google pour savoir qui on est
+            const googleProfile = JSON.parse(localStorage.getItem('user_profile'));
+            if (!googleProfile) {
+                showToast("Erreur : Session expirée. Reconnectez-vous.", "error");
+                setTimeout(() => window.location.href = "login.html", 2000);
+                return;
+            }
+
+            // Données du Formulaire (Step 1)
+            const formData = {
+                prenom: document.getElementById('prenom').value,
+                nom: document.getElementById('nom').value,
+                age: document.getElementById('age').value,
+                pseudo: document.getElementById('pseudo').value,
+                email: googleProfile.email, // On sécurise avec l'email Google
+                googleId: googleProfile.sub,
+                avatar: googleProfile.picture
+            };
+
+            // Données des Jeux (Step 3)
+            const gamesDetails = {};
+            selectedGames.forEach(gameId => {
+                const section = document.querySelector(`.detail-section:has([data-game="${gameId}"])`);
+                gamesDetails[gameId] = {
+                    rank: section.querySelector('.rank-badge.selected').dataset.rank,
+                    role: section.querySelector('.role-chip.selected').innerText
+                };
+            });
+
+            const finalPayload = {
+                ...formData,
+                games: selectedGames,
+                details: gamesDetails
+            };
+
+            // 3. ENVOI AU BACKEND
+            try {
+                const res = await fetch('http://localhost:3001/api/auth/onboarding', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(finalPayload)
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast('Profil créé ! Entrée dans l\'arène...', 'success');
+                    // On met à jour le profil local avec les nouvelles infos (Pseudo, etc)
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    setTimeout(() => {
+                        window.location.href = "index.html"; // Direction l'App
+                    }, 1500);
+                } else {
+                    showToast("Erreur : " + data.error, "error");
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Erreur de connexion serveur", "error");
+            }
         }
 
         // Initialize

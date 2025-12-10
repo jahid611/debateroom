@@ -338,6 +338,34 @@
             updatePoll();
         }
 
+        function vote(choice) {
+        // On récupère qui vote
+        if (!currentUser || currentUser.name === 'Invité') {
+            return showToast("Connectez-vous pour voter !", "error");
+        }
+
+        // On envoie l'ID unique (email est le plus sûr, ou pseudo)
+        // Ici j'utilise le name stocké, mais l'idéal est l'email stocké dans user_profile
+        const userEmail = JSON.parse(localStorage.getItem('user_profile'))?.email;
+
+        socket.emit('send_vote', {
+            roomId: 'general',
+            choice: choice, // 'valid' ou 'inting'
+            userId: userEmail
+        });
+        
+        appState.votes.user = choice; // Update local pour la couleur
+        updatePoll(); // Update visuel immédiat (optimistic)
+        playBeep(600);
+    }
+    
+    // Listener pour mettre à jour les barres quand les autres votent
+    socket.on('update_votes', (data) => {
+        appState.votes.valid = data.valid;
+        appState.votes.inting = data.inting;
+        updatePoll(); // Redessine les barres
+    });
+
         function vote(s) {
             appState.votes[s]++;
             appState.votes.user = s;

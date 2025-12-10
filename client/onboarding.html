@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debateroom | Begin Your Legacy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* --- LUXURY FOUNDATION --- */
+        :root {
+            --bg-body: #050505;
+            --glass: rgba(20, 20, 20, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --accent: #D4AF37; 
+            --accent-glow: rgba(212, 175, 55, 0.4);
+            --text-main: #FFFFFF;
+            --text-muted: #888888;
+            --font-main: 'Inter', sans-serif;
+            --font-head: 'Oswald', sans-serif; /* Police style "Gaming/Sport" mais chic */
+            --radius: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); }
+
+        body {
+            background-color: var(--bg-body);
+            /* Fond abstrait sombre et premium */
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(76, 209, 55, 0.03) 0%, transparent 40%),
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* --- CONTAINER PRINCIPAL --- */
+        .onboarding-container {
+            width: 100%; max-width: 900px; min-height: 600px;
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+            position: relative; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+
+        /* Barre de progression subtile en haut */
+        .progress-bar {
+            height: 4px; width: 100%; background: rgba(255,255,255,0.05);
+            position: absolute; top: 0; left: 0;
+        }
+        .progress-fill {
+            height: 100%; background: var(--accent); width: 33%;
+            transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* --- STEPS LOGIC --- */
+        .step {
+            display: none; opacity: 0; 
+            padding: 50px; flex: 1;
+            flex-direction: column;
+            animation: fadeIn 0.5s forwards;
+        }
+        .step.active { display: flex; opacity: 1; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 { font-family: var(--font-head); font-size: 2.5rem; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; }
+        h1 span { color: var(--accent); }
+        p.subtitle { color: var(--text-muted); margin-bottom: 40px; font-weight: 300; }
+
+        /* --- STEP 1: IDENTITY FORM --- */
+        .form-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+        }
+        .full-width { grid-column: span 2; }
+
+        .input-group { position: relative; margin-bottom: 15px; }
+        
+        .input-field {
+            width: 100%; background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border); border-radius: 12px;
+            padding: 16px 20px; color: #fff; font-size: 1rem; outline: none;
+            transition: 0.3s;
+        }
+        .input-field:focus { border-color: var(--accent); background: rgba(212, 175, 55, 0.05); }
+        .input-field::placeholder { color: transparent; } /* Hiding default placeholder for label effect */
+
+        .floating-label {
+            position: absolute; left: 20px; top: 16px; color: var(--text-muted);
+            pointer-events: none; transition: 0.3s ease; font-size: 1rem;
+        }
+        .input-field:focus + .floating-label,
+        .input-field:not(:placeholder-shown) + .floating-label {
+            top: -10px; left: 15px; font-size: 0.75rem; color: var(--accent);
+            background: #0a0a0a; padding: 0 5px;
+        }
+
+        /* --- STEP 2: GAME SELECTION (CARDS) --- */
+        .games-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px;
+            padding-bottom: 20px;
+        }
+
+        .game-card {
+            position: relative; aspect-ratio: 3/4; border-radius: 12px; overflow: hidden;
+            cursor: pointer; border: 1px solid var(--glass-border); transition: 0.3s;
+            background-size: cover; background-position: center;
+        }
+        
+        /* Overlay sombre par défaut */
+        .game-card::before {
+            content:''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            transition: 0.3s;
+        }
+        
+        .game-title {
+            position: absolute; bottom: 15px; left: 0; width: 100%; text-align: center;
+            font-family: var(--font-head); font-size: 1.2rem; z-index: 2; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        /* Hover & Active State */
+        .game-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.3); }
+        .game-card.selected { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+        .game-card.selected::after {
+            content: '✓'; position: absolute; top: 10px; right: 10px;
+            background: var(--accent); color: #000; width: 24px; height: 24px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 0.8rem; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        /* --- STEP 3: DETAILS (RANK & ROLES) --- */
+        .detail-section { margin-bottom: 40px; border-bottom: 1px solid var(--glass-border); padding-bottom: 30px; }
+        .game-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .game-icon-small { width: 40px; height: 40px; border-radius: 8px; background-size: cover; border: 1px solid var(--glass-border); }
+        
+        .section-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 15px; display: block; }
+
+        /* Rank Selector (Visual) */
+        .ranks-flex { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 25px; }
+        .rank-badge {
+            width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s; position: relative;
+        }
+        .rank-badge img { width: 70%; height: 70%; object-fit: contain; filter: grayscale(1); transition: 0.3s; }
+        
+        .rank-badge:hover { background: rgba(255,255,255,0.1); transform: scale(1.1); }
+        .rank-badge.selected { border-color: var(--accent); background: rgba(212, 175, 55, 0.1); box-shadow: 0 0 15px var(--accent-glow); }
+        .rank-badge.selected img { filter: grayscale(0); }
+        
+        /* Tooltip rank name */
+        .rank-badge::after {
+            content: attr(data-rank); position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%);
+            font-size: 0.7rem; color: var(--text-muted); opacity: 0; transition: 0.2s; white-space: nowrap;
+        }
+        .rank-badge:hover::after { opacity: 1; bottom: -20px; }
+
+        /* Roles / Playstyle (Chips) */
+        .roles-flex { display: flex; gap: 10px; flex-wrap: wrap; }
+        .role-chip {
+            padding: 8px 16px; border-radius: 20px; border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.02); color: var(--text-muted); cursor: pointer; transition: 0.2s; font-size: 0.9rem;
+        }
+        .role-chip:hover { border-color: #fff; color: #fff; }
+        .role-chip.selected { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+        /* --- FOOTER BUTTONS --- */
+        .actions {
+            margin-top: auto; padding-top: 30px; display: flex; justify-content: flex-end; gap: 15px;
+        }
+        
+        .btn {
+            padding: 12px 30px; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: 0.3s; letter-spacing: 0.5px;
+        }
+        .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); }
+        .btn-outline:hover { border-color: #fff; color: #fff; }
+        
+        .btn-primary { 
+            background: var(--text-main); color: #000; border: none; 
+            display: flex; align-items: center; gap: 10px;
+        }
+        .btn-primary:hover { background: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+
+        /* Scrollbar custom */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="onboarding-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+        <div class="step active" id="step1">
+            <h1>L'Initiation <span>DebateRoom</span></h1>
+            <p class="subtitle">Créez votre identité unique pour rejoindre le cercle.</p>
+
+            <div class="form-grid">
+                <div class="input-group">
+                    <input type="text" class="input-field" placeholder=" " id="prenom">
+                    <label class="floating-label">Prénom</label>
+                </div>
+                <div class="input-group">
+                    <input type="text" class="input-field" placeholder=" " id="nom">
+                    <label class="floating-label">Nom</label>
+                </div>
+                <div class="input-group">
+                    <input type="number" class="input-field" placeholder=" " id="age">
+                    <label class="floating-label">Age</label>
+                </div>
+                <div class="input-group">
+                    <input type="text" class="input-field" placeholder=" " id="pseudo">
+                    <label class="floating-label">Pseudo (In-App)</label>
+                </div>
+                <div class="input-group full-width">
+                    <input type="email" class="input-field" placeholder=" " id="email">
+                    <label class="floating-label">Adresse Email</label>
+                </div>
+                <div class="input-group full-width">
+                    <input type="password" class="input-field" placeholder=" " id="password">
+                    <label class="floating-label">Mot de passe</label>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-primary" onclick="nextStep(2)">Suivant <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <div class="step" id="step2">
+            <h1>Votre <span>Arsenal</span></h1>
+            <p class="subtitle">Sélectionnez les terrains où vous excellez.</p>
+
+            <div class="games-grid">
+                <div class="game-card" onclick="toggleGame(this, 'lol')" style="background-image: url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Aatrox_0.jpg');">
+                    <div class="game-title">League of Legends</div>
+                </div>
+                <div class="game-card" onclick="toggleGame(this, 'valorant')" style="background-image: url('https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt3f072eb373d32571/623267d325e79e623101c59c/Jett_0.jpg');">
+                    <div class="game-title">Valorant</div>
+                </div>
+                <div class="game-card" onclick="toggleGame(this, 'rl')" style="background-image: url('https://rocketleague.media.zestyio.com/rl_cross-play_asset_rl_1920.309bf22bd29c2e411e9dd8eb07575bb1.jpg');">
+                    <div class="game-title">Rocket League</div>
+                </div>
+                <div class="game-card" onclick="toggleGame(this, 'fortnite')" style="background-image: url('https://cdn2.unrealengine.com/28br-ch4s1-egs-launcher-blade-2560x1440-2560x1440-6b63795c692c.jpg');">
+                    <div class="game-title">Fortnite</div>
+                </div>
+                <div class="game-card" onclick="toggleGame(this, 'fifa')" style="background-image: url('https://media.contentapi.ea.com/content/dam/ea/fc/fc-24/common/fc24-standard-keyart-16x9.jpg.adapt.crop191x100.1200w.jpg');">
+                    <div class="game-title">EA FC 24</div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-outline" onclick="nextStep(1)">Retour</button>
+                <button class="btn btn-primary" onclick="generateStep3()">Confirmer <i class="fa-solid fa-check"></i></button>
+            </div>
+        </div>
+
+        <div class="step" id="step3">
+            <h1>Votre <span>Statut</span></h1>
+            <p class="subtitle">Définissez votre niveau. La légitimité commence ici.</p>
+
+            <div id="dynamicDetailsContainer" style="flex:1; overflow-y:auto; padding-right:10px;">
+                </div>
+
+            <div class="actions">
+                <button class="btn btn-outline" onclick="nextStep(2)">Modifier jeux</button>
+                <button class="btn btn-primary" onclick="finishOnboarding()">Entrer dans l'Arène</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DATA DE JEU (Images & Ranks) ---
+        // Pour les Ranks, j'utilise des images génériques/placeholders.
+        // IDÉE PRO : Remplace les URLs 'src' par tes vrais assets locaux plus tard.
+        const gameData = {
+            'lol': {
+                name: 'League of Legends',
+                img: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Aatrox_0.jpg',
+                ranks: ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger'],
+                roles: ['Top', 'Jungle', 'Mid', 'ADC', 'Support'],
+                rankIconsBase: 'https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/' // Base URL pour les vraies icones LoL si possible, sinon placeholder
+            },
+            'valorant': {
+                name: 'Valorant',
+                img: 'https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt3f072eb373d32571/623267d325e79e623101c59c/Jett_0.jpg',
+                ranks: ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Ascendant', 'Immortal', 'Radiant'],
+                roles: ['Duelist', 'Controller', 'Initiator', 'Sentinel']
+            },
+            'rl': {
+                name: 'Rocket League',
+                img: 'https://rocketleague.media.zestyio.com/rl_cross-play_asset_rl_1920.309bf22bd29c2e411e9dd8eb07575bb1.jpg',
+                ranks: ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Champ', 'Grand Champ', 'SSL'],
+                roles: ['Striker', 'Defender', 'Playmaker', 'Freestyler']
+            },
+            'fortnite': {
+                name: 'Fortnite',
+                img: 'https://cdn2.unrealengine.com/28br-ch4s1-egs-launcher-blade-2560x1440-2560x1440-6b63795c692c.jpg',
+                ranks: ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Elite', 'Champion', 'Unreal'],
+                roles: ['Builder', 'Zero Build', 'Competitive', 'Creative']
+            },
+            'fifa': {
+                name: 'EA FC 24',
+                img: 'https://media.contentapi.ea.com/content/dam/ea/fc/fc-24/common/fc24-standard-keyart-16x9.jpg.adapt.crop191x100.1200w.jpg',
+                ranks: ['Div 10', 'Div 8', 'Div 6', 'Div 4', 'Div 2', 'Elite'],
+                roles: ['Ultimate Team', 'Carrière', 'Clubs Pro']
+            }
+        };
+
+        // --- STATE ---
+        let selectedGames = []; // Stocke les IDs des jeux (ex: ['lol', 'fifa'])
+        let userData = {};
+
+        // --- NAVIGATION ---
+        function nextStep(stepNum) {
+            // Hide all
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+            // Show target
+            document.getElementById(`step${stepNum}`).classList.add('active');
+            
+            // Update Progress Bar
+            const fills = ['33%', '66%', '100%'];
+            document.getElementById('progressFill').style.width = fills[stepNum - 1];
+        }
+
+        // --- STEP 2 LOGIC ---
+        function toggleGame(card, gameId) {
+            card.classList.toggle('selected');
+            if(selectedGames.includes(gameId)) {
+                selectedGames = selectedGames.filter(g => g !== gameId);
+            } else {
+                selectedGames.push(gameId);
+            }
+        }
+
+        // --- STEP 3 GENERATOR (The Magic Part) ---
+        function generateStep3() {
+            if(selectedGames.length === 0) {
+                alert("Sélectionnez au moins un jeu !");
+                return;
+            }
+
+            const container = document.getElementById('dynamicDetailsContainer');
+            container.innerHTML = ''; // Reset
+
+            selectedGames.forEach(gameId => {
+                const data = gameData[gameId];
+                
+                // HTML Template pour chaque jeu
+                const gameSection = document.createElement('div');
+                gameSection.className = 'detail-section';
+                
+                // 1. Header du jeu
+                let html = `
+                    <div class="game-header">
+                        <div class="game-icon-small" style="background-image: url('${data.img}')"></div>
+                        <h2 style="font-size:1.5rem; font-weight:600;">${data.name}</h2>
+                    </div>
+                `;
+
+                // 2. Rank Selector (Visual Icons)
+                html += `<span class="section-label">Rang Actuel</span><div class="ranks-flex">`;
+                data.ranks.forEach(rank => {
+                    // Note: J'utilise une icône générique FontAwesome pour l'exemple.
+                    // Dans la vraie app, remplace <i> par <img src="path/to/rank/icon.png">
+                    html += `
+                        <div class="rank-badge" data-rank="${rank}" onclick="selectRank(this)">
+                            <i class="fa-solid fa-trophy" style="color: #555;"></i>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+
+                // 3. Role/Playstyle Selector (Chips)
+                html += `<span class="section-label">Main Role / Style</span><div class="roles-flex">`;
+                data.roles.forEach(role => {
+                    html += `<div class="role-chip" onclick="selectRole(this)">${role}</div>`;
+                });
+                html += `</div>`;
+
+                gameSection.innerHTML = html;
+                container.appendChild(gameSection);
+            });
+
+            nextStep(3);
+        }
+
+        // --- SELECTION HELPERS ---
+        function selectRank(badge) {
+            // Deselect siblings in same group
+            const parent = badge.parentElement;
+            Array.from(parent.children).forEach(c => c.classList.remove('selected'));
+            badge.classList.add('selected');
+        }
+
+        function selectRole(chip) {
+            // Deselect siblings (assuming single role for simplicity, can be toggle for multi)
+            const parent = chip.parentElement;
+            Array.from(parent.children).forEach(c => c.classList.remove('selected'));
+            chip.classList.add('selected');
+        }
+
+        function finishOnboarding() {
+            // Ici tu collecterais toutes les data pour le backend
+            alert("Bienvenue dans DebateRoom. Profil créé.");
+            // Redirection vers l'app principale
+            // window.location.href = "app.html";
+        }
+
+    </script>
+</body>
+</html>

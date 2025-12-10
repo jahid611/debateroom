@@ -1,9 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const YtDlpWrap = require('yt-dlp-wrap').default;
-const ytDlpWrap = new YtDlpWrap();
+const path = require('path');
 
-// Route: GET /api/video/resolve?url=...
+// Chemin vers l'exécutable qu'on vient de télécharger
+// __dirname = dossier routes, donc on remonte d'un cran (..) pour aller dans server/
+const binaryName = process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
+const execPath = path.join(__dirname, '..', binaryName);
+
+// On initialise avec le chemin précis
+const ytDlpWrap = new YtDlpWrap(execPath);
+
+// ... le reste du code reste identique (router.get...)
 router.get('/resolve', async (req, res) => {
     const { url } = req.query;
     if (!url) return res.status(400).json({ error: "URL manquante" });
