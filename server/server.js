@@ -4,92 +4,130 @@ const http = require('http');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
+
+// Import des Modèles
 const Message = require('./models/Message');
+const Room = require('./models/Room'); // Assurez-vous d'avoir créé ce fichier !
 
 const app = express();
 const server = http.createServer(app);
 
-// Configuration CORS (Pour autoriser ton Frontend à parler au Backend)
 app.use(cors());
 app.use(express.json());
 
-const io = new Server(server, {
-    cors: {
-        origin: "*", // A sécuriser plus tard avec ton URL frontend
-        methods: ["GET", "POST"]
-    }
-});
-
-// --- CONNEXION MONGO DB ---
+// Connexion MongoDB
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('✅ MongoDB Connecté !'))
     .catch(err => console.error('❌ Erreur MongoDB:', err));
 
-// --- ROUTES API ---
- app.use('/api/auth', require('./routes/auth'));
- app.use('/api/video', require('./routes/video'));
+// Routes API
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/video', require('./routes/video'));
 
-// --- SOCKET.IO (Chat Temps Réel) ---
+// Socket.io Setup
+const io = new Server(server, {
+    cors: { origin: "*", methods: ["GET", "POST"] }
+});
+
+// --- GESTION TEMPS RÉEL ---
 io.on('connection', (socket) => {
-    
-    // Quand quelqu'un arrive, on lui envoie les 50 derniers messages
+    console.log('User connected:', socket.id);
+
+    // 1. Rejoindre une salle
     socket.on('join_room', async (roomId) => {
         socket.join(roomId);
+        
+        // Charger ou créer la salle en DB pour avoir les votes actuels
+        let room = await Room.findOne({ slug: roomId });
+        if (!room) {
+            room = new Room({ slug: roomId, votes: { valid: [], inting: [] } });
+            await room.save();
+        }
+
+        // Récupérer l'historique des messages
         const history = await Message.find({ roomId }).sort({ timestamp: 1 }).limit(50);
-        socket.emit('load_history', history); // Envoie l'historique juste à lui
+        
+        // Envoyer l'état initial au client (Historique + Vidéo actuelle + Votes actuels)
+        socket.emit('load_history', history);
+        
+        if (room.videoUrl) {
+            socket.emit('update_video', { 
+                src: room.videoUrl, 
+                title: room.videoTitle, 
+                platform: room.videoPlatform 
+            });
+        }
+
+        // Envoyer les scores actuels
+        socket.emit('update_votes', {
+            valid: room.votes.valid.length,
+            inting: room.votes.inting.length
+        });
     });
 
-    // Quand quelqu'un parle
+    // 2. Chat : Envoi de message
     socket.on('send_message', async (data) => {
-        // 1. Sauvegarder en DB
         const newMsg = new Message({
             roomId: data.roomId,
             username: data.username,
-            avatar: data.avatar, // L'avatar Google stocké dans le localStorage
+            avatar: data.avatar,
             text: data.text
         });
         await newMsg.save();
-
-        // 2. Envoyer à tout le monde (y compris l'envoyeur pour confirmer)
         io.to(data.roomId).emit('receive_message', newMsg);
     });
-});
 
-// Gestion des votes sécurisés
+    // 3. Vidéo : Changement de vidéo
+    socket.on('change_video', async (data) => {
+        await Room.findOneAndUpdate(
+            { slug: data.roomId },
+            { 
+                videoUrl: data.src,
+                videoTitle: data.title,
+                videoPlatform: data.platform,
+                updatedAt: Date.now()
+            },
+            { upsert: true }
+        );
+        
+        // Dire à tout le monde de changer de vidéo
+        io.to(data.roomId).emit('update_video', data);
+        
+        // Reset des votes pour la nouvelle vidéo
+        await Room.findOneAndUpdate({ slug: data.roomId }, { votes: { valid: [], inting: [] } });
+        io.to(data.roomId).emit('update_votes', { valid: 0, inting: 0 });
+    });
+
+    // 4. Votes (CORRIGÉ : MAINTENANT À L'INTÉRIEUR)
     socket.on('send_vote', async (data) => {
-        // data = { roomId, choice ('valid' ou 'inting'), userId }
-        const { roomId, choice, userId } = data; // userId est l'email ou le pseudo unique
-
+        const { roomId, choice, userId } = data;
         if (!userId) return;
 
         const room = await Room.findOne({ slug: roomId });
         if (!room) return;
 
-        // Logique anti-doublon et changement d'avis
         const otherChoice = choice === 'valid' ? 'inting' : 'valid';
 
-        // 1. Si déjà voté pour l'autre choix, on enlève
+        // Logique de vote unique
         if (room.votes[otherChoice].includes(userId)) {
             room.votes[otherChoice] = room.votes[otherChoice].filter(id => id !== userId);
         }
-
-        // 2. Si déjà voté pour ce choix, on ne fait rien (ou on enlève si tu veux permettre d'annuler)
         if (!room.votes[choice].includes(userId)) {
             room.votes[choice].push(userId);
         }
 
         await room.save();
 
-        // 3. Calculer les totaux pour le frontend
-        const countValid = room.votes.valid.length;
-        const countInting = room.votes.inting.length;
-
-        // Renvoyer à tout le monde
         io.to(roomId).emit('update_votes', { 
-            valid: countValid, 
-            inting: countInting 
+            valid: room.votes.valid.length, 
+            inting: room.votes.inting.length 
         });
-    }); 
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+    });
+}); // <--- Fin de io.on('connection')
 
 // --- DEMARRAGE ---
 const PORT = process.env.PORT || 3001;

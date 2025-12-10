@@ -1,136 +1,414 @@
-require('dotenv').config();
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const mongoose = require('mongoose');
-const cors = require('cors');
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Debateroom | App</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
 
-// Import des Modèles
-const Message = require('./models/Message');
-const Room = require('./models/Room'); // Assurez-vous d'avoir créé ce fichier !
-
-const app = express();
-const server = http.createServer(app);
-
-app.use(cors());
-app.use(express.json());
-
-// Connexion MongoDB
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('✅ MongoDB Connecté !'))
-    .catch(err => console.error('❌ Erreur MongoDB:', err));
-
-// Routes API
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/video', require('./routes/video'));
-
-// Socket.io Setup
-const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] }
-});
-
-// --- GESTION TEMPS RÉEL ---
-io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
-
-    // 1. Rejoindre une salle
-    socket.on('join_room', async (roomId) => {
-        socket.join(roomId);
-        
-        // Charger ou créer la salle en DB pour avoir les votes actuels
-        let room = await Room.findOne({ slug: roomId });
-        if (!room) {
-            room = new Room({ slug: roomId, votes: { valid: [], inting: [] } });
-            await room.save();
+    <style>
+        /* --- VARIABLES --- */
+        :root {
+            --bg-body: #0a0a0a;
+            --bg-card: rgba(20, 20, 20, 0.95);
+            --bg-input: rgba(40, 40, 40, 0.6);
+            --border-subtle: rgba(255, 255, 255, 0.1);
+            --accent: #D4AF37; 
+            --accent-glow: rgba(212, 175, 55, 0.2);
+            --danger: #ff4d4d;
+            --success: #4cd137;
+            --text-main: #F0F0F0;
+            --text-muted: #999999;
+            --radius: 14px;
+            --font-main: 'Inter', sans-serif;
+            --app-height: 100vh;
         }
 
-        // Récupérer l'historique des messages
-        const history = await Message.find({ roomId }).sort({ timestamp: 1 }).limit(50);
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-main); -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: var(--app-height);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        button { cursor: pointer; border: none; outline: none; transition: 0.2s; }
+        button:active { transform: scale(0.96); }
+
+        /* --- HEADER --- */
+        header {
+            height: 60px; border-bottom: 1px solid var(--border-subtle);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+            background: #0a0a0a; z-index: 100; flex-shrink: 0;
+        }
+        .logo { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.5px; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .logo i { color: var(--accent); }
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        .user-pill { display: flex; align-items: center; gap: 8px; padding: 4px 8px 4px 4px; background: rgba(255,255,255,0.05); border-radius: 30px; border: 1px solid var(--border-subtle); font-size: 0.8rem; }
+        .avatar { width: 24px; height: 24px; border-radius: 50%; background: #444; background-size: cover; background-position: center; }
+        .user-text { display: block; }
+
+        /* --- LAYOUT --- */
+        .main-container { display: grid; grid-template-columns: 1fr 400px; flex: 1; overflow: hidden; }
+
+        /* --- MEDIA SECTION --- */
+        .media-section { padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+
+        .sim-bar { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 5px; }
+        .sim-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); color: var(--text-muted); padding: 6px 10px; border-radius: 6px; font-size: 0.7rem; display: flex; align-items: center; gap: 6px; }
+        .sim-btn:hover { border-color: var(--accent); color: var(--text-main); }
+
+        .input-bar { display: flex; gap: 8px; background: var(--bg-card); padding: 5px; border-radius: 10px; border: 1px solid var(--border-subtle); max-width: 800px; margin: 0 auto; width: 100%; }
+        .game-select { background: transparent; border: none; border-right: 1px solid var(--border-subtle); color: var(--text-main); padding: 0 10px; font-size: 0.85rem; outline: none; }
+        .game-select option { background: #1a1a1a; }
+        .url-input { flex: 1; background: transparent; border: none; color: var(--text-main); padding: 0 10px; font-size: 0.9rem; outline: none; min-width: 0; }
+        .btn-import { background: var(--text-main); color: #000; border-radius: 6px; padding: 0 15px; font-weight: 600; font-size: 0.85rem; flex-shrink: 0; }
+
+        .player-frame { width: 100%; max-width: 1100px; margin: 0 auto; aspect-ratio: 16/9; background: #000; border-radius: var(--radius); border: 1px solid var(--border-subtle); overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); z-index: 10; }
+        video, iframe { width: 100%; height: 100%; border: none; }
+        .empty-state { text-align: center; color: var(--text-muted); opacity: 0.5; font-size: 0.9rem; }
+        .empty-state i { font-size: 2.5rem; margin-bottom: 10px; display: block; }
+
+        .meta-container { max-width: 1100px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1fr 280px; gap: 20px; align-items: start; }
+        .clip-details h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 5px; line-height: 1.2; }
+        .tag-row { display: flex; gap: 6px; flex-wrap: wrap; }
+        .tag { font-size: 0.7rem; padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+        .tag.accent { color: var(--accent); border-color: rgba(212, 175, 55, 0.3); }
+
+        .poll-box { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+        .poll-header { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); display: flex; justify-content: space-between; }
+        .vote-btns { display: flex; gap: 6px; height: 32px; }
+        .vote-btn { flex: 1; border-radius: 6px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(255,255,255,0.05); color: var(--text-muted); position: relative; overflow: hidden; border: 1px solid transparent; }
+        .vote-btn .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; opacity: 0.2; transition: width 0.5s ease; z-index: 1; }
+        .vote-btn span { z-index: 2; position: relative; }
+        .vote-btn.valid:hover, .vote-btn.valid.active { border-color: var(--success); color: var(--success); } .vote-btn.valid .fill { background: var(--success); }
+        .vote-btn.inting:hover, .vote-btn.inting.active { border-color: var(--danger); color: var(--danger); } .vote-btn.inting .fill { background: var(--danger); }
+
+        /* --- CHAT SECTION --- */
+        .chat-section { background: #111; border-left: 1px solid var(--border-subtle); display: flex; flex-direction: column; height: 100%; position: relative; }
+        .chat-header { padding: 12px 15px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 600; background: #161616; flex-shrink: 0; }
+        .live-indicator { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: var(--danger); background: rgba(255, 77, 77, 0.1); padding: 2px 6px; border-radius: 4px; }
+        .dot { width: 5px; height: 5px; background: currentColor; border-radius: 50%; animation: pulse 2s infinite; }
+
+        .chat-window { flex: 1; padding: 15px; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
         
-        // Envoyer l'état initial au client (Historique + Vidéo actuelle + Votes actuels)
-        socket.emit('load_history', history);
+        .msg { display: flex; flex-direction: column; max-width: 90%; animation: slideIn 0.2s; position: relative; }
+        .msg-content { padding: 8px 12px; border-radius: 10px; font-size: 0.9rem; line-height: 1.4; word-wrap: break-word; }
+        .msg-meta { font-size: 0.65rem; color: var(--text-muted); margin-bottom: 2px; margin-left: 2px; }
+        .msg.left { align-self: flex-start; } .msg.left .msg-content { background: #222; border-top-left-radius: 2px; border: 1px solid #333; }
+        .msg.right { align-self: flex-end; align-items: flex-end; } .msg.right .msg-content { background: rgba(212, 175, 55, 0.15); color: #fff; border-top-right-radius: 2px; border: 1px solid rgba(212, 175, 55, 0.3); }
+        .msg.system { align-self: center; text-align: center; margin: 10px 0; max-width: 100%; opacity: 0.6; } .msg.system .msg-content { background: transparent; border: none; font-size: 0.75rem; font-style: italic; padding: 0; }
+
+        .chat-input-box { padding: 10px; background: #161616; border-top: 1px solid var(--border-subtle); flex-shrink: 0; }
+        .chat-form { display: flex; gap: 8px; align-items: center; position: relative; }
+        .emoji-btn { background: transparent; color: var(--text-muted); font-size: 1.2rem; padding: 0 5px; }
+        .chat-input { flex: 1; background: #0a0a0a; border: 1px solid var(--border-subtle); padding: 10px 12px; border-radius: 20px; color: #fff; font-size: 0.9rem; outline: none; }
+        .chat-input:focus { border-color: var(--accent); }
+        .send-btn { background: var(--accent); color: #000; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+
+        emoji-picker { position: fixed; bottom: 70px; right: 20px; z-index: 9999; --background: #161616; --border-color: #333; height: 350px; width: 300px; display: none; box-shadow: 0 10px 40px #000; border-radius: 12px; }
+        emoji-picker.active { display: flex; animation: slideUp 0.2s; }
+
+        .toast-container { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 10000; pointer-events: none; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .toast { background: rgba(30,30,30,0.9); backdrop-filter: blur(5px); border: 1px solid #444; padding: 10px 20px; border-radius: 30px; font-size: 0.85rem; box-shadow: 0 5px 20px #000; animation: fadeUp 0.3s; display: flex; align-items: center; gap: 8px; }
+        .toast.success i { color: var(--success); } .toast.error i { color: var(--danger); }
+
+        @media (max-width: 900px) {
+            .main-container { display: flex; flex-direction: column; height: calc(var(--app-height) - 50px); }
+            header { height: 50px; padding: 0 15px; } .logo { font-size: 1rem; } .user-text { display: none; }
+            .media-section { padding: 0; flex: 0 0 auto; background: #000; overflow: visible; display: block; }
+            .player-frame { border-radius: 0; border: none; border-bottom: 1px solid var(--border-subtle); width: 100%; max-width: 100%; aspect-ratio: 16/9; margin: 0; }
+            .sim-bar { display: none; }
+            .input-bar { margin: 10px; width: auto; border-radius: 8px; padding: 4px; } .game-select { max-width: 80px; padding: 0 5px; } .btn-import { padding: 0 10px; font-size: 0.8rem; }
+            .meta-container { display: block; padding: 0 15px 15px 15px; gap: 10px; border-bottom: 1px solid var(--border-subtle); }
+            .clip-details { margin-bottom: 10px; } .clip-details h1 { font-size: 1.1rem; margin-top: 10px; }
+            .poll-box { width: 100%; border: none; padding: 0; background: transparent; } .vote-btns { height: 40px; }
+            .chat-section { flex: 1; border: none; min-height: 0; } .chat-header { display: none; }
+            .chat-input-box { padding: 8px 10px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+            emoji-picker { width: 100%; height: 250px; bottom: 0; right: 0; border-radius: 20px 20px 0 0; }
+        }
+
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeUp { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <emoji-picker class="dark"></emoji-picker>
+    <div class="toast-container" id="toastContainer"></div>
+
+    <header>
+        <div class="logo"><i class="fa-solid fa-scale-balanced"></i> DebateRoom</div>
+        <div class="header-right">
+            <div class="user-pill">
+                <div class="avatar" id="userAvatar"></div> 
+                <span class="user-text" id="userName">Invité</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
         
-        if (room.videoUrl) {
-            socket.emit('update_video', { 
-                src: room.videoUrl, 
-                title: room.videoTitle, 
-                platform: room.videoPlatform 
+        <section class="media-section">
+            <div class="sim-bar">
+                <button class="sim-btn" onclick="sim('outplayed')">LoL</button>
+                <button class="sim-btn" onclick="sim('twitch')">Dota</button>
+                <button class="sim-btn" onclick="sim('medal')">Fortnite</button>
+            </div>
+
+            <div class="input-bar">
+                <select class="game-select">
+                    <option>Jeu</option><option>LoL</option><option>Valo</option><option>FIFA</option>
+                </select>
+                <input type="text" class="url-input" id="linkInput" placeholder="Lien vidéo...">
+                <button class="btn-import" onclick="processLink()">GO</button>
+            </div>
+
+            <div class="player-frame" id="playerContainer">
+                <div class="empty-state"><i class="fa-solid fa-film"></i><span>En attente</span></div>
+            </div>
+
+            <div class="meta-container">
+                <div class="clip-details">
+                    <h1 id="clipTitle">Aucun clip</h1>
+                    <div class="tag-row" id="tagRow"><div class="tag">En attente</div></div>
+                </div>
+                
+                <div class="poll-box">
+                    <div class="poll-header"><span>Votre Avis ?</span></div>
+                    <div class="vote-btns">
+                        <button class="vote-btn valid" onclick="vote('valid')" id="btnValid">
+                            <div class="fill" id="fillValid"></div> <span>VALID</span>
+                        </button>
+                        <button class="vote-btn inting" onclick="vote('inting')" id="btnInting">
+                            <div class="fill" id="fillInting"></div> <span>INTING</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="chat-section">
+            <div class="chat-header">
+                <span>Discussion</span> <div class="live-indicator"><div class="dot"></div> LIVE</div>
+            </div>
+            
+            <div class="chat-window" id="chatList">
+                <div class="msg system"><div class="msg-content">Bienvenue dans le débat.</div></div>
+            </div>
+
+            <div class="chat-input-box">
+                <div class="chat-form">
+                    <button class="emoji-btn" id="emojiBtn"><i class="fa-regular fa-face-smile"></i></button>
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Message..." autocomplete="off" onkeypress="handleKey(event)">
+                    <button class="send-btn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // --- RESIZE HANDLER ---
+        function setAppHeight() { document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`); }
+        window.addEventListener('resize', setAppHeight); setAppHeight();
+
+        // --- STATE & AUTH ---
+        let appState = { video: null, votes: { valid: 0, inting: 0, user: null }, messages: [] };
+        
+        // Chargement User Info depuis Google Login
+        const storedUser = localStorage.getItem('user'); // Si tu as utilisé le backend
+        const storedProfile = localStorage.getItem('user_profile'); // Si frontend only
+        
+        let currentUser = { name: 'Invité', avatar: '' };
+        
+        if (storedUser) {
+            currentUser = JSON.parse(storedUser);
+        } else if (storedProfile) {
+            // Fallback si on est en mode "Front Only" avec Google
+            const p = JSON.parse(storedProfile);
+            currentUser = { name: p.given_name, avatar: p.picture };
+        }
+
+        // Mise à jour UI Header
+        document.getElementById('userName').innerText = currentUser.name;
+        if(currentUser.avatar) document.getElementById('userAvatar').style.backgroundImage = `url('${currentUser.avatar}')`;
+
+        // --- SOCKET.IO ---
+        // IMPORTANT : Si tu testes en local, assure-toi que le backend tourne sur le port 3001
+        const socket = io("http://localhost:3001");
+
+        socket.on('connect', () => {
+            console.log("Connecté au serveur Socket.io");
+            socket.emit('join_room', 'general');
+        });
+
+        socket.on('receive_message', (msg) => {
+            addMsgToUI(msg);
+            playSound('pop');
+        });
+
+        socket.on('load_history', (messages) => {
+            document.getElementById('chatList').innerHTML = '';
+            messages.forEach(msg => addMsgToUI(msg));
+        });
+
+        // --- UI LOGIC ---
+        function addMsgToUI(msg) {
+            const list = document.getElementById('chatList');
+            const div = document.createElement('div');
+            const isMe = msg.username === currentUser.name;
+            
+            div.className = isMe ? 'msg right' : 'msg left';
+            const time = new Date(msg.timestamp || Date.now()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            
+            div.innerHTML = `
+                <div class="msg-meta">${msg.username} • ${time}</div>
+                <div class="msg-content">${msg.text}</div>
+            `;
+            list.appendChild(div);
+            list.scrollTop = list.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if(!text) return;
+
+            // Envoi au serveur
+            socket.emit('send_message', {
+                roomId: 'general',
+                username: currentUser.name,
+                avatar: currentUser.avatar,
+                text: text
             });
+            input.value = '';
         }
 
-        // Envoyer les scores actuels
-        socket.emit('update_votes', {
-            valid: room.votes.valid.length,
-            inting: room.votes.inting.length
-        });
-    });
+        async function processLink() {
+            const urlInput = document.getElementById('linkInput');
+            const url = urlInput.value.trim();
+            if(!url) return showToast("Lien vide", "error");
 
-    // 2. Chat : Envoi de message
-    socket.on('send_message', async (data) => {
-        const newMsg = new Message({
-            roomId: data.roomId,
-            username: data.username,
-            avatar: data.avatar,
-            text: data.text
-        });
-        await newMsg.save();
-        io.to(data.roomId).emit('receive_message', newMsg);
-    });
+            showToast("Analyse...", "info");
 
-    // 3. Vidéo : Changement de vidéo
-    socket.on('change_video', async (data) => {
-        await Room.findOneAndUpdate(
-            { slug: data.roomId },
-            { 
-                videoUrl: data.src,
-                videoTitle: data.title,
-                videoPlatform: data.platform,
-                updatedAt: Date.now()
-            },
-            { upsert: true }
-        );
+            try {
+                // Appel Backend
+                const response = await fetch(`http://localhost:3001/api/video/resolve?url=${encodeURIComponent(url)}`);
+                const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+
+                loadVideoUI({ type: 'file', src: data.src }, "Vidéo Chargée", "Import");
+                showToast("Vidéo prête !", "success");
+                urlInput.value = '';
+            } catch (err) {
+                console.error(err);
+                // Fallback simulation si pas de backend
+                showToast("Erreur Backend. Mode Simulation.", "error");
+            }
+        }
+
+        function sim(p) {
+            const mp4 = "https://uploads.overwolf.com/owclient/direct/2025/12/03/e7fd7ec4-e7ea-479c-afe9-76fcecfa97dd.mp4";
+            loadVideoUI({ type:'file', src:mp4 }, `Débat ${p}`, p);
+            showToast("Sim: " + p, "success");
+            playBeep(1200);
+        }
+
+        function loadVideoUI(d, title, tag) {
+            const c = document.getElementById('playerContainer');
+            document.getElementById('clipTitle').innerText = title;
+            document.getElementById('tagRow').innerHTML = `<div class="tag accent">${tag}</div>`;
+            
+            if(d.type==='iframe') c.innerHTML = `<iframe src="${d.src}" allowfullscreen></iframe>`;
+            else c.innerHTML = `<video src="${d.src}" controls autoplay playsinline style="width:100%;height:100%;background:#000"></video>`;
+            
+            appState.votes = { valid:0, inting:0, user:null };
+            updatePoll();
+        }
+
+        function vote(choice) {
+        // On récupère qui vote
+        if (!currentUser || currentUser.name === 'Invité') {
+            return showToast("Connectez-vous pour voter !", "error");
+        }
+
+        // On envoie l'ID unique (email est le plus sûr, ou pseudo)
+        // Ici j'utilise le name stocké, mais l'idéal est l'email stocké dans user_profile
+        const userEmail = JSON.parse(localStorage.getItem('user_profile'))?.email;
+
+        socket.emit('send_vote', {
+            roomId: 'general',
+            choice: choice, // 'valid' ou 'inting'
+            userId: userEmail
+        });
         
-        // Dire à tout le monde de changer de vidéo
-        io.to(data.roomId).emit('update_video', data);
-        
-        // Reset des votes pour la nouvelle vidéo
-        await Room.findOneAndUpdate({ slug: data.roomId }, { votes: { valid: [], inting: [] } });
-        io.to(data.roomId).emit('update_votes', { valid: 0, inting: 0 });
+        appState.votes.user = choice; // Update local pour la couleur
+        updatePoll(); // Update visuel immédiat (optimistic)
+        playBeep(600);
+    }
+    
+    // Listener pour mettre à jour les barres quand les autres votent
+    socket.on('update_votes', (data) => {
+        appState.votes.valid = data.valid;
+        appState.votes.inting = data.inting;
+        updatePoll(); // Redessine les barres
     });
 
-    // 4. Votes (CORRIGÉ : MAINTENANT À L'INTÉRIEUR)
-    socket.on('send_vote', async (data) => {
-        const { roomId, choice, userId } = data;
-        if (!userId) return;
-
-        const room = await Room.findOne({ slug: roomId });
-        if (!room) return;
-
-        const otherChoice = choice === 'valid' ? 'inting' : 'valid';
-
-        // Logique de vote unique
-        if (room.votes[otherChoice].includes(userId)) {
-            room.votes[otherChoice] = room.votes[otherChoice].filter(id => id !== userId);
-        }
-        if (!room.votes[choice].includes(userId)) {
-            room.votes[choice].push(userId);
+        function vote(s) {
+            appState.votes[s]++;
+            appState.votes.user = s;
+            updatePoll();
+            playBeep(600);
+            showToast(`Voté : ${s.toUpperCase()}`, "success");
         }
 
-        await room.save();
+        function updatePoll() {
+            const v = appState.votes; const t = v.valid + v.inting;
+            const pV = t ? (v.valid/t)*100 : 0;
+            const pI = t ? (v.inting/t)*100 : 0;
+            document.getElementById('fillValid').style.width = pV+'%';
+            document.getElementById('fillInting').style.width = pI+'%';
+            document.getElementById('btnValid').className = `vote-btn valid ${v.user==='valid'?'active':''}`;
+            document.getElementById('btnInting').className = `vote-btn inting ${v.user==='inting'?'active':''}`;
+        }
 
-        io.to(roomId).emit('update_votes', { 
-            valid: room.votes.valid.length, 
-            inting: room.votes.inting.length 
-        });
-    });
+        // --- UTILS ---
+        function showToast(msg, type='info') {
+            const t = document.createElement('div'); t.className=`toast ${type}`;
+            t.innerHTML = `<i class="fa-solid ${type==='success'?'fa-check':(type==='error'?'fa-xmark':'fa-info-circle')}"></i><span>${msg}</span>`;
+            document.getElementById('toastContainer').appendChild(t);
+            setTimeout(()=>t.remove(), 3000);
+        }
 
-    socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
-    });
-}); // <--- Fin de io.on('connection')
+        const picker = document.querySelector('emoji-picker');
+        const emojiBtn = document.getElementById('emojiBtn');
+        const chatInput = document.getElementById('chatInput');
+        emojiBtn.addEventListener('click', (e) => { e.stopPropagation(); picker.classList.toggle('active'); });
+        picker.addEventListener('emoji-click', e => { chatInput.value += e.detail.unicode; chatInput.focus(); picker.classList.remove('active'); });
+        document.addEventListener('click', (e) => { if (!picker.contains(e.target) && e.target !== emojiBtn) picker.classList.remove('active'); });
+        function handleKey(e) { if(e.key==='Enter') sendMessage(); }
 
-// --- DEMARRAGE ---
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-    console.log(`SERVER RUNNING ON PORT ${PORT}`);
-});
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playBeep(freq=800) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.frequency.value = freq; o.connect(g); g.connect(audioCtx.destination);
+            o.start(); g.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.1);
+            o.stop(audioCtx.currentTime + 0.1);
+        }
+        function playSound(type) { if(type==='pop') playBeep(800); }
+    </script>
+</body>
+</html>
