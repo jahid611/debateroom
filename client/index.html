@@ -598,17 +598,26 @@
         
         // --- AFFICHAGE INTELLIGENT (Vidéo vs Youtube) ---
         function getPlayerHTML(room) {
-            // 1. YouTube Embed
+            // 1. YouTube Embed (Inchangé)
             if (room.videoUrl.includes('youtube.com/embed')) {
                 return `<iframe src="${room.videoUrl}" style="width:100%; height:100%; border:none; pointer-events:none;" allow="autoplay; encrypted-media"></iframe>`;
             } 
-            // 2. TikTok Embed (NOUVEAU)
+            // 2. TikTok Embed (AMÉLIORÉ)
             else if (room.videoUrl.includes('tiktok.com/embed')) {
-                return `<iframe src="${room.videoUrl}" style="width:100%; height:100%; border:none; border-radius:12px;"></iframe>`;
+                // On utilise un wrapper pour couper les bords (crop) si besoin
+                return `
+                    <div style="width:100%; height:100%; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#000;">
+                        <iframe src="${room.videoUrl}" 
+                                style="width:100%; height:120%; border:none; transform: scale(1.1);" 
+                                allow="autoplay; encrypted-media">
+                        </iframe>
+                    </div>
+                `;
             }
-            // 3. Fichier MP4 classique (Upload, Outplayed...)
+            // 3. Fichier MP4 classique (Upload, Outplayed, TikTok Direct)
             else {
-                return `<video src="${room.videoUrl}" loop playsinline muted></video>`;
+                // Pour les vrais fichiers, on s'assure qu'ils remplissent bien l'écran
+                return `<video src="${room.videoUrl}" loop playsinline muted autoplay style="width:100%; height:100%; object-fit:cover;"></video>`;
             }
         }
 
