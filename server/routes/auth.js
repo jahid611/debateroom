@@ -119,32 +119,39 @@ router.post('/onboarding', async (req, res) => {
 });
 
 // MISE À JOUR PROFIL
+// MISE À JOUR PROFIL COMPLETE
 router.put('/update', async (req, res) => {
     try {
-        const { email, pseudo, bio, avatar, currentPassword, newPassword } = req.body;
+        const { email, prenom, nom, pseudo, bio, avatar, games, details, currentPassword, newPassword } = req.body;
         
         let user = await User.findOne({ email });
         if (!user) return res.status(404).json({ error: "Utilisateur introuvable" });
 
-        // Mise à jour des infos de base
+        // 1. Mise à jour Identité
         if (pseudo) user.pseudo = pseudo;
-        if (bio) user.bio = bio;
+        if (bio !== undefined) user.bio = bio; // Autorise une bio vide
         if (avatar) user.avatar = avatar;
+        
+        // Reconstruction du nom complet si Prénom/Nom changés
+        if (prenom && nom) {
+            user.name = `${prenom} ${nom}`;
+        }
 
-        // Changement de mot de passe (Sécurisé)
+        // 2. Mise à jour Jeux & Rangs
+        if (games) user.games = games;
+        if (details) user.details = details;
+
+        // 3. Changement Mot de passe (Sécurisé)
         if (newPassword) {
-            // Si l'utilisateur a un mot de passe (pas Google), on vérifie l'ancien
             if (user.password && user.password !== currentPassword) {
                 return res.status(403).json({ error: "Mot de passe actuel incorrect" });
             }
             user.password = newPassword;
-            // Note: Dans un vrai projet, ici on enverrait un email de confirmation via Nodemailer
-            // Pour l'instant, on change directement.
         }
 
         await user.save();
         
-        // On renvoie le user sans le mot de passe
+        // On renvoie le user propre
         const userObj = user.toObject();
         delete userObj.password;
         
