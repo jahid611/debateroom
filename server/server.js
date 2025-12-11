@@ -33,54 +33,53 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket) => {
-    console.log('Utilisateur connecté :', socket.id);
+    console.log('🔗 Utilisateur connecté :', socket.id);
 
-    // 1. REJOINDRE UNE SALLE
+    // 1. REJOINDRE UNE SALLE & CHARGER L'HISTORIQUE
     socket.on('join_room', async (roomId) => {
         socket.join(roomId);
+        console.log(`📂 Utilisateur rejoint la room : ${roomId}`);
         
         let room = await Room.findOne({ slug: roomId });
         
-        // Si c'est une vieille salle ou 'general' qui n'existe pas, on la crée vide
+        // Si la salle n'existe pas encore en DB, on la crée
         if (!room) {
             room = new Room({ 
                 slug: roomId, 
                 votes: { valid: [], inting: [] },
-                videoUrl: "",
-                videoTitle: "En attente...",
-                videoPlatform: ""
+                videoUrl: "", videoTitle: "Chargement...", videoPlatform: ""
             });
             await room.save();
         }
 
-        const history = await Message.find({ roomId }).sort({ timestamp: 1 }).limit(50);
+        // --- CHARGEMENT HISTORIQUE OPTIMISÉ ---
+        // On récupère les 100 derniers messages, triés du plus vieux au plus récent
+        const history = await Message.find({ roomId: roomId })
+                                     .sort({ timestamp: 1 }) 
+                                     .limit(100);
         
         const scores = {
             valid: room.votes?.valid?.length || 0,
             inting: room.votes?.inting?.length || 0
         };
 
-        // Note: init_room est envoyé seulement à celui qui arrive
+        // On envoie tout au client, avec l'ID de la room pour cibler la bonne boîte
         socket.emit('init_room', { 
             video: { 
                 src: room.videoUrl, 
                 title: room.videoTitle, 
                 platform: room.videoPlatform 
             },
-            messages: history,
+            messages: history, // L'historique part ici
             votes: scores,
-            roomId: roomId // <--- TRÈS IMPORTANT : C'est la clé pour que le front sache où afficher !
+            roomId: roomId 
         });
     });
 
     // 2. CRÉATION D'UNE NOUVELLE ROOM (IMPORT VIDEO)
     socket.on('create_room', async (data) => {
-        // data = { src, title, platform, game }
-        
-        // A. Générer un ID unique
         const uniqueId = `${data.game || 'room'}-${Date.now()}`;
 
-        // B. Créer la Room en DB
         const newRoom = new Room({
             slug: uniqueId,
             game: data.game,
@@ -91,8 +90,6 @@ io.on('connection', (socket) => {
         });
         
         await newRoom.save();
-
-        // C. Dire au client créateur de recharger la page (ou aller vers la room)
         socket.emit('room_created', uniqueId);
     });
 
@@ -106,7 +103,6 @@ io.on('connection', (socket) => {
 
         const otherChoice = choice === 'valid' ? 'inting' : 'valid';
 
-        // Initialiser les tableaux si undefined (sécurité)
         if(!room.votes) room.votes = { valid: [], inting: [] };
         if(!room.votes.valid) room.votes.valid = [];
         if(!room.votes.inting) room.votes.inting = [];
@@ -121,7 +117,6 @@ io.on('connection', (socket) => {
 
         await room.save();
 
-        // Renvoyer l'update avec l'ID de la room pour cibler la bonne slide
         io.to(roomId).emit('update_votes', { 
             roomId: roomId,
             valid: room.votes.valid.length, 
@@ -129,26 +124,31 @@ io.on('connection', (socket) => {
         });
     });
 
-    // 4. CHAT
+    // 4. CHAT (SAUVEGARDE ET DIFFUSION)
     socket.on('send_message', async (data) => {
-        // data contient { roomId, username, text ... }
-        
-        const newMsg = new Message({
-            roomId: data.roomId, // IMPORTANT : On garde l'ID de la room
-            username: data.username,
-            avatar: data.avatar,
-            text: data.text
-        });
-        await newMsg.save();
+        console.log(`💬 Message de ${data.username} dans ${data.roomId}`);
 
-        // DIFFUSION : On envoie uniquement aux gens dans cette salle (data.roomId)
-        io.to(data.roomId).emit('receive_message', newMsg);
-        
-        console.log(`💬 Message de ${data.username} dans ${data.roomId}`); // DEBUG TERMINAL
+        try {
+            const newMsg = new Message({
+                roomId: data.roomId,
+                username: data.username,
+                avatar: data.avatar,
+                text: data.text
+            });
+            
+            // On sauvegarde en DB
+            await newMsg.save();
+
+            // On envoie à tout le monde DANS CETTE SALLE
+            io.to(data.roomId).emit('receive_message', newMsg);
+            
+        } catch (err) {
+            console.error("❌ Erreur sauvegarde message :", err);
+        }
     });
 
     socket.on('disconnect', () => {
-        console.log('Utilisateur déconnecté:', socket.id);
+        console.log('❌ Utilisateur déconnecté:', socket.id);
     });
 });
 

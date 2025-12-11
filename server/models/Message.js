@@ -1,12 +1,10 @@
 const mongoose = require('mongoose');
 
 const MessageSchema = new mongoose.Schema({
-    roomId: { type: String, default: 'general' }, // Pour séparer les débats plus tard
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    username: String, // On copie le pseudo pour aller vite (cache)
-    avatar: String,
-    text: String,
-    reactions: { type: Map, of: Number }, // Pour les emojis 🔥
+    roomId: { type: String, required: true, index: true }, // INDISPENSABLE pour lier le msg au débat
+    username: { type: String, required: true },
+    avatar: { type: String },
+    text: { type: String, required: true },
     timestamp: { type: Date, default: Date.now }
 });
 
