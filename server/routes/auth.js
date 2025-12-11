@@ -121,38 +121,28 @@ router.post('/onboarding', async (req, res) => {
 // MISE À JOUR PROFIL
 // MISE À JOUR PROFIL COMPLETE (AVEC LOGS)
 router.put('/update', async (req, res) => {
-    console.log("---- [API/AUTH/UPDATE] REQUÊTE REÇUE ----");
-    console.log("Body reçu :", JSON.stringify(req.body, null, 2)); // LOG DES DONNÉES REÇUES
-
+    console.log("📝 Update demandé pour :", req.body.email);
+    
     try {
-        const { email, prenom, nom, pseudo, bio, avatar, games, details, currentPassword, newPassword } = req.body;
+        const { email, prenom, nom, pseudo, bio, avatar, games, details, newPassword, currentPassword } = req.body;
         
         let user = await User.findOne({ email });
-        if (!user) {
-            console.log("❌ Utilisateur introuvable pour l'email :", email);
-            return res.status(404).json({ error: "Utilisateur introuvable" });
+        if (!user) return res.status(404).json({ error: "Utilisateur introuvable" });
+
+        // 1. Mise à jour de l'AVATAR (L'URL Cloudinary arrive ici)
+        if (avatar) {
+            console.log("📸 Nouvel avatar sauvegardé :", avatar);
+            user.avatar = avatar; 
         }
 
-        console.log("Utilisateur trouvé :", user.email);
-        console.log("Ancien Avatar :", user.avatar);
-
-        // 1. Mise à jour Identité
+        // 2. Autres infos
         if (pseudo) user.pseudo = pseudo;
         if (bio !== undefined) user.bio = bio;
-        if (avatar) {
-            console.log("📸 Changement d'Avatar demandé :", avatar);
-            user.avatar = avatar;
-        }
-        
-        if (prenom && nom) {
-            user.name = `${prenom} ${nom}`;
-        }
-
-        // 2. Mise à jour Jeux & Rangs
+        if (prenom && nom) user.name = `${prenom} ${nom}`;
         if (games) user.games = games;
         if (details) user.details = details;
 
-        // 3. Changement Mot de passe
+        // 3. Password
         if (newPassword) {
             if (user.password && user.password !== currentPassword) {
                 return res.status(403).json({ error: "Mot de passe actuel incorrect" });
@@ -160,17 +150,14 @@ router.put('/update', async (req, res) => {
             user.password = newPassword;
         }
 
-        await user.save();
-        console.log("✅ Profil sauvegardé en DB !");
-        console.log("Nouvel Avatar en DB :", user.avatar);
+        await user.save(); // C'EST ICI QUE ÇA PART DANS MONGO
         
         const userObj = user.toObject();
         delete userObj.password;
-        
         res.json({ success: true, user: userObj });
 
     } catch (error) {
-        console.error("❌ Erreur Serveur lors de l'update :", error);
+        console.error(error);
         res.status(500).json({ error: "Erreur serveur" });
     }
 });
