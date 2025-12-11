@@ -168,7 +168,7 @@
                     slide.className = 'slide';
                     slide.dataset.slug = room.slug;
                     slide.innerHTML = `
-                        <div class="video-zone"><video src="${room.videoUrl}" loop playsinline></video></div>
+                        <div class="video-zone"><video src="${room.videoUrl}" loop playsinline muted></video></div>
                         <div class="ui-zone">
                             <div class="info"><span class="tag">${room.game}</span><div class="title">${room.videoTitle}</div></div>
                             <div class="votes" id="votes-${room.slug}">
