@@ -212,6 +212,105 @@
         .upload-toast.success .success-icon { display:block; }
         .upload-toast-text { font-size:0.85rem; font-weight:500; }
         
+        /* Upload indicator - small corner icon */
+        .upload-indicator {
+            position:fixed;
+            top:20px;
+            left:20px;
+            background:var(--surface-elevated);
+            border:1px solid var(--border);
+            border-radius:50%;
+            width:44px;
+            height:44px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index:500;
+            box-shadow:0 4px 20px rgba(0,0,0,0.4);
+            opacity:0;
+            visibility:hidden;
+            transform:scale(0.8);
+            transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+        .upload-indicator.show { 
+            opacity:1; 
+            visibility:visible; 
+            transform:scale(1);
+        }
+        .upload-indicator .spinner {
+            width:20px;
+            height:20px;
+            border:2px solid var(--border);
+            border-top-color:var(--accent);
+            border-radius:50%;
+            animation:spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .upload-indicator.success { 
+            border-color:var(--success); 
+            background:var(--success);
+        }
+        .upload-indicator.success .spinner { display:none; }
+        .upload-indicator .success-icon { 
+            display:none; 
+            color:#fff; 
+            font-size:1.1rem; 
+        }
+        .upload-indicator.success .success-icon { display:block; }
+        
+        /* Video progress bar at bottom */
+        .video-progress-container {
+            position:absolute;
+            bottom:0;
+            left:0;
+            right:0;
+            height:3px;
+            background:rgba(255,255,255,0.2);
+            z-index:15;
+            cursor:pointer;
+        }
+        .video-progress-bar {
+            height:100%;
+            background:#fff;
+            width:0%;
+            transition:width 0.1s linear;
+            border-radius:0 2px 2px 0;
+        }
+        .video-progress-container:hover {
+            height:6px;
+        }
+        .video-progress-container:hover .video-progress-bar {
+            background:var(--accent);
+        }
+        
+        /* 2x Speed indicator */
+        .speed-indicator {
+            position:absolute;
+            top:50%;
+            left:50%;
+            transform:translate(-50%, -50%) scale(0);
+            background:rgba(0,0,0,0.7);
+            border-radius:12px;
+            padding:10px 18px;
+            display:flex;
+            align-items:center;
+            gap:8px;
+            font-size:0.9rem;
+            font-weight:600;
+            color:#fff;
+            pointer-events:none;
+            opacity:0;
+            z-index:25;
+            transition:all 0.2s ease;
+        }
+        .speed-indicator.show {
+            transform:translate(-50%, -50%) scale(1);
+            opacity:1;
+        }
+        .speed-indicator i {
+            color:var(--accent);
+        }
+        
         @media(max-width:900px) {
             .app-layout { grid-template-columns:1fr; grid-template-rows:1fr; } 
             .header, .chat-sidebar { display:none; }
@@ -250,6 +349,14 @@
             /* drag handle for swipe down */
             .mobile-chat-drag-handle { width:40px; height:4px; background:var(--text-secondary); border-radius:2px; margin:0 auto 8px; opacity:0.5; }
             .mobile-chat .chat-input-area { flex-shrink:0; padding-bottom:env(safe-area-inset-bottom,16px); }
+
+            /* Upload indicator top left on mobile */
+            .upload-indicator {
+                top:16px;
+                left:16px;
+                width:40px;
+                height:40px;
+            }
         }
 
         /* MODAL */
@@ -265,6 +372,12 @@
     </style>
 </head>
 <body>
+
+<!-- Upload indicator -->
+<div class="upload-indicator" id="uploadIndicator">
+    <div class="spinner"></div>
+    <i class="fa-solid fa-check-circle success-icon"></i>
+</div>
 
 <!-- Mobile ELO badge in top right corner -->
 <div class="mobile-elo-badge" id="mobileEloBadge">
@@ -437,22 +550,143 @@
                 <iframe src="${room.videoUrl}" style="width:100%;height:120%;border:none;transform:scale(1.1);"></iframe>
             </div>`;
         }
+        // Include unique IDs for speed indicators for each video slide
         return `<video src="${room.videoUrl}" loop playsinline muted autoplay style="width:100%;height:100%;object-fit:cover;"></video>
-                <div class="pause-indicator"><i class="fa-solid fa-pause"></i></div>`;
+                <div class="pause-indicator"><i class="fa-solid fa-pause"></i></div>
+                <div class="speed-indicator"><i class="fa-solid fa-forward-fast"></i> 2x</div>
+                <div class="video-progress-container">
+                    <div class="video-progress-bar"></div>
+                </div>`;
     }
-
+    // ==========================================
     // ==========================================
     // ==========================================
     function setupTapToPause(slide) {
         const container = slide.querySelector('.video-container');
         const video = slide.querySelector('video');
         const pauseIndicator = slide.querySelector('.pause-indicator');
+        const speedIndicator = slide.querySelector('.speed-indicator');
+        const progressContainer = slide.querySelector('.video-progress-container');
+        const progressBar = slide.querySelector('.video-progress-bar');
         
-        if (!video || !container || !pauseIndicator) return;
+        if (!video || !container) return;
         
+        // Progress bar update
+        if (progressBar) {
+            video.addEventListener('timeupdate', () => {
+                const percent = (video.currentTime / video.duration) * 100;
+                progressBar.style.width = percent + '%';
+            });
+        }
+        
+        // Click on progress bar to seek
+        if (progressContainer) {
+            progressContainer.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const rect = progressContainer.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const percent = (clickX / rect.width);
+                // Ensure percent is between 0 and 1
+                const clampedPercent = Math.max(0, Math.min(1, percent));
+                video.currentTime = clampedPercent * video.duration;
+            });
+        }
+        
+        // 2x speed on long press right side
+        let holdTimer = null;
+        let isSpeedUp = false;
+        
+        container.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            const rect = container.getBoundingClientRect();
+            const touchX = touch.clientX - rect.left;
+            
+            // If touch is on right 40% of screen
+            if (touchX > rect.width * 0.6) {
+                holdTimer = setTimeout(() => {
+                    if (!video.paused) {
+                        isSpeedUp = true;
+                        video.playbackRate = 2;
+                        if (speedIndicator) {
+                            speedIndicator.classList.add('show');
+                        }
+                    }
+                }, 200); // 200ms hold to activate
+            }
+        }, { passive: true });
+        
+        container.addEventListener('touchend', () => {
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+            if (isSpeedUp) {
+                isSpeedUp = false;
+                video.playbackRate = 1;
+                if (speedIndicator) {
+                    speedIndicator.classList.remove('show');
+                }
+                return; // Don't toggle pause if we were speeding
+            }
+        });
+        
+        container.addEventListener('touchcancel', () => {
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+            if (isSpeedUp) {
+                isSpeedUp = false;
+                video.playbackRate = 1;
+                if (speedIndicator) {
+                    speedIndicator.classList.remove('show');
+                }
+            }
+        });
+        
+        // Desktop: mouse hold on right side for 2x speed
+        container.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.side-actions') || e.target.closest('.video-info') || e.target.closest('.video-progress-container')) return;
+            
+            const rect = container.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            
+            if (clickX > rect.width * 0.6) {
+                holdTimer = setTimeout(() => {
+                    if (!video.paused) {
+                        isSpeedUp = true;
+                        video.playbackRate = 2;
+                        if (speedIndicator) {
+                            speedIndicator.classList.add('show');
+                        }
+                    }
+                }, 200);
+            }
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+            if (isSpeedUp) {
+                isSpeedUp = false;
+                video.playbackRate = 1;
+                if (speedIndicator) {
+                    speedIndicator.classList.remove('show');
+                }
+            }
+        });
+        
+        // Tap to pause/play (click handler)
         container.addEventListener('click', (e) => {
-            // Don't trigger if clicking on action buttons area
-            if (e.target.closest('.side-actions') || e.target.closest('.video-info')) return;
+            // Don't trigger if clicking on action buttons, progress bar, or info area
+            if (e.target.closest('.side-actions') || e.target.closest('.video-info') || e.target.closest('.video-progress-container')) return;
+            
+            // Don't toggle if we just finished speed mode
+            if (isSpeedUp) return;
+            
+            if (!pauseIndicator) return;
             
             if (video.paused) {
                 video.play();
@@ -472,7 +706,6 @@
             }
         });
     }
-
     // ==========================================
     // ==========================================
     function shuffleArray(array) {
@@ -544,6 +777,19 @@
                 container.appendChild(slide);
                 
                 setupTapToPause(slide);
+                // Removed setupVideoControls as setupTapToPause now handles progress and speed
+                
+                // Re-add video event listeners for video element specifically
+                const video = slide.querySelector('video');
+                if (video) {
+                    video.addEventListener('timeupdate', () => {
+                        const progressBar = slide.querySelector('.video-progress-bar');
+                        if (progressBar) {
+                            const percent = (video.currentTime / video.duration) * 100;
+                            progressBar.style.width = percent + '%';
+                        }
+                    });
+                }
             });
 
             initObserver();
@@ -583,13 +829,19 @@
                 } else {
                     const video = entry.target.querySelector('video');
                     const pauseIndicator = entry.target.querySelector('.pause-indicator');
+                    const progressBar = entry.target.querySelector('.video-progress-bar');
+                    
                     if (video) {
                         video.pause();
-                        video.currentTime = 0;
+                        video.currentTime = 0; // Reset playback
                     }
                     // Reset pause indicator when leaving
                     if (pauseIndicator) {
                         pauseIndicator.classList.remove('show', 'hide-anim');
+                    }
+                    // Reset progress bar
+                    if (progressBar) {
+                        progressBar.style.width = '0%';
                     }
                 }
             });
@@ -985,23 +1237,25 @@
 
     // ==========================================
     // ==========================================
-    function showUploadToast(text, isSuccess = false) {
-        const toast = document.getElementById('uploadToast');
-        const toastText = document.getElementById('uploadToastText');
-        toastText.innerText = text;
-        
-        if (isSuccess) {
-            toast.classList.add('success');
-        } else {
-            toast.classList.remove('success');
-        }
-        
-        toast.classList.add('show');
+    function showUploadIndicator() {
+        const indicator = document.getElementById('uploadIndicator');
+        indicator.classList.remove('success');
+        indicator.classList.add('show');
     }
     
-    function hideUploadToast() {
-        const toast = document.getElementById('uploadToast');
-        toast.classList.remove('show', 'success');
+    function showUploadSuccess() {
+        const indicator = document.getElementById('uploadIndicator');
+        indicator.classList.add('success');
+        
+        // Hide after 2 seconds
+        setTimeout(() => {
+            indicator.classList.remove('show', 'success');
+        }, 2000);
+    }
+    
+    function hideUploadIndicator() {
+        const indicator = document.getElementById('uploadIndicator');
+        indicator.classList.remove('show', 'success');
     }
 
     // ==========================================
@@ -1009,6 +1263,7 @@
     // ==========================================
     let uploadMode = 'link';
     let pendingUpload = null;
+    let isCreatorUpload = false; // Track if current user is uploading
 
     window.switchUploadTab = (mode) => {
         uploadMode = mode;
@@ -1043,8 +1298,8 @@
 
         closeCreateModal();
         
-        // Show upload toast
-        showUploadToast("Publication en cours...");
+        isCreatorUpload = true;
+        showUploadIndicator();
 
         try {
             let videoSrc = "";
@@ -1084,7 +1339,8 @@
 
         } catch (e) {
             console.error("[v0] Upload error:", e);
-            hideUploadToast();
+            hideUploadIndicator();
+            isCreatorUpload = false;
             alert("Erreur: " + e.message);
         }
     };
@@ -1092,15 +1348,16 @@
     socket.on('room_created', (newRoom) => {
         console.log("[v0] Room created:", newRoom);
         
-        // Show success toast
-        showUploadToast("Video publiee !", true);
+        if (!isCreatorUpload) {
+            console.log("[v0] Not the creator, ignoring room_created");
+            return;
+        }
         
-        // Hide toast after 3 seconds
-        setTimeout(() => {
-            hideUploadToast();
-        }, 3000);
+        // Show success indicator
+        showUploadSuccess();
+        isCreatorUpload = false;
         
-        // Add the new video to the top of the feed
+        // Add the new video to the top of the feed and scroll to it
         if (newRoom && newRoom.slug) {
             const container = document.getElementById('feedScroll');
             const validCount = 0;
@@ -1140,11 +1397,8 @@
             // Insert at the beginning of the feed
             container.insertBefore(slide, container.firstChild);
             
-            // Setup tap to pause
+            // Setup tap to pause + progress bar + 2x speed
             setupTapToPause(slide);
-            
-            // Scroll to the new video
-            slide.scrollIntoView({ behavior: 'smooth' });
             
             // Re-initialize observer for the new slide
             const observer = new IntersectionObserver(entries => {
@@ -1153,6 +1407,12 @@
                         const roomId = entry.target.dataset.slug;
                         currentRoomId = roomId;
                         socket.emit('join_room', { roomId, userEmail: user.email });
+                        
+                        if (!viewedRooms.includes(roomId)) {
+                            viewedRooms.push(roomId);
+                            if (viewedRooms.length > 100) viewedRooms = viewedRooms.slice(-100);
+                            localStorage.setItem('viewedRooms', JSON.stringify(viewedRooms));
+                        }
                         
                         const video = entry.target.querySelector('video');
                         if (video) video.play();
@@ -1173,11 +1433,14 @@
             }, { threshold: 0.5 });
             
             observer.observe(slide);
+            
+            setTimeout(() => {
+                slide.scrollIntoView({ behavior: 'smooth' });
+            }, 300);
         }
         
         pendingUpload = null;
     });
-
     // ==========================================
     // CLOSE DROPDOWN ON OUTSIDE CLICK
     // ==========================================
