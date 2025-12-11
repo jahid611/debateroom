@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil - DebateRoom</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root { 
+            --bg:#000; 
+            --surface:#0a0a0a; 
+            --surface-elevated:#111; 
+            --accent:#D4AF37; 
+            --accent-glow:rgba(212,175,55,0.3); 
+            --text:#fff; 
+            --text-secondary:#a0a0a0; 
+            --border:rgba(255,255,255,0.08); 
+            --success:#00d26a; 
+            --danger:#ff4757; 
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { 
+            font-family:'Inter',sans-serif; 
+            background:var(--bg); 
+            color:var(--text); 
+            min-height:100vh;
+        }
+        
+        .header { 
+            position:fixed;
+            top:0;
+            left:0;
+            right:0;
+            height:64px; 
+            background:rgba(0,0,0,0.9); 
+            backdrop-filter:blur(20px); 
+            border-bottom:1px solid var(--border); 
+            display:flex; 
+            align-items:center; 
+            justify-content:space-between; 
+            padding:0 24px; 
+            z-index:100; 
+        }
+        .back-btn {
+            width:42px;
+            height:42px;
+            border-radius:12px;
+            background:rgba(255,255,255,0.05);
+            border:1px solid var(--border);
+            color:var(--text);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            cursor:pointer;
+            transition:0.2s;
+            font-size:1rem;
+        }
+        .back-btn:hover { background:var(--accent); color:#000; }
+        .header-title {
+            font-family:'Space Grotesk',sans-serif;
+            font-size:1.1rem;
+            font-weight:700;
+        }
+        .header-spacer { width:42px; }
+        
+        .profile-container {
+            padding-top:84px;
+            max-width:600px;
+            margin:0 auto;
+            padding-left:20px;
+            padding-right:20px;
+            padding-bottom:40px;
+        }
+        
+        .profile-header {
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            text-align:center;
+            padding:30px 0;
+        }
+        
+        .profile-avatar {
+            width:120px;
+            height:120px;
+            border-radius:50%;
+            background-size:cover;
+            background-position:center;
+            border:4px solid var(--accent);
+            box-shadow:0 0 30px var(--accent-glow);
+            margin-bottom:20px;
+        }
+        
+        .profile-name {
+            font-family:'Space Grotesk',sans-serif;
+            font-size:1.8rem;
+            font-weight:700;
+            margin-bottom:4px;
+        }
+        
+        .profile-pseudo {
+            color:var(--accent);
+            font-size:1rem;
+            margin-bottom:12px;
+        }
+        
+        .profile-bio {
+            color:var(--text-secondary);
+            font-size:0.9rem;
+            line-height:1.6;
+            max-width:400px;
+            margin-bottom:20px;
+        }
+        
+        .profile-stats {
+            display:flex;
+            gap:30px;
+            justify-content:center;
+            margin-bottom:24px;
+        }
+        
+        .stat-item {
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:4px;
+        }
+        
+        .stat-value {
+            font-size:1.4rem;
+            font-weight:700;
+            color:var(--text);
+        }
+        
+        .stat-value.elo {
+            color:var(--accent);
+        }
+        
+        .stat-label {
+            font-size:0.75rem;
+            color:var(--text-secondary);
+            text-transform:uppercase;
+            letter-spacing:0.5px;
+        }
+        
+        .profile-games {
+            display:flex;
+            flex-wrap:wrap;
+            gap:10px;
+            justify-content:center;
+            margin-bottom:24px;
+        }
+        
+        .game-badge {
+            display:flex;
+            align-items:center;
+            gap:8px;
+            padding:10px 16px;
+            background:var(--surface-elevated);
+            border:1px solid var(--border);
+            border-radius:12px;
+        }
+        
+        .game-name {
+            font-weight:600;
+            font-size:0.85rem;
+        }
+        
+        .game-rank {
+            color:var(--accent);
+            font-weight:700;
+            font-size:0.8rem;
+        }
+        
+        .profile-joined {
+            display:flex;
+            align-items:center;
+            gap:8px;
+            color:var(--text-secondary);
+            font-size:0.8rem;
+        }
+        
+        .section-title {
+            font-family:'Space Grotesk',sans-serif;
+            font-size:1.1rem;
+            font-weight:700;
+            margin:30px 0 16px;
+            display:flex;
+            align-items:center;
+            gap:10px;
+        }
+        
+        .section-title::before {
+            content:'';
+            width:4px;
+            height:20px;
+            background:var(--accent);
+            border-radius:2px;
+        }
+        
+        .videos-grid {
+            display:grid;
+            grid-template-columns:repeat(3, 1fr);
+            gap:4px;
+        }
+        
+        .video-thumb {
+            aspect-ratio:9/16;
+            background-size:cover;
+            background-position:center;
+            background-color:var(--surface-elevated);
+            border-radius:8px;
+            cursor:pointer;
+            position:relative;
+            overflow:hidden;
+            transition:0.2s;
+        }
+        
+        .video-thumb:hover {
+            transform:scale(1.02);
+        }
+        
+        .video-thumb-overlay {
+            position:absolute;
+            inset:0;
+            background:linear-gradient(to top, rgba(0,0,0,0.8), transparent 50%);
+            display:flex;
+            align-items:flex-end;
+            padding:10px;
+            opacity:0;
+            transition:0.2s;
+        }
+        
+        .video-thumb:hover .video-thumb-overlay {
+            opacity:1;
+        }
+        
+        .video-thumb-stats {
+            display:flex;
+            gap:12px;
+            font-size:0.75rem;
+        }
+        
+        .video-thumb-stat {
+            display:flex;
+            align-items:center;
+            gap:4px;
+        }
+        
+        .empty-state {
+            text-align:center;
+            padding:60px 20px;
+            color:var(--text-secondary);
+        }
+        
+        .empty-state i {
+            font-size:3rem;
+            margin-bottom:16px;
+            opacity:0.3;
+        }
+        
+        .loading {
+            text-align:center;
+            padding:60px 20px;
+            color:var(--text-secondary);
+        }
+        
+        .loading i {
+            font-size:2rem;
+            animation:spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform:rotate(360deg); }
+        }
+        
+        @media(max-width:600px) {
+            .profile-avatar { width:100px; height:100px; }
+            .profile-name { font-size:1.5rem; }
+            .profile-stats { gap:20px; }
+            .stat-value { font-size:1.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <button class="back-btn" onclick="history.back()">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <span class="header-title" id="headerTitle">Profil</span>
+        <div class="header-spacer"></div>
+    </header>
+    
+    <div class="profile-container">
+        <div id="profileContent">
+            <div class="loading">
+                <i class="fa-solid fa-spinner"></i>
+                <p>Chargement...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const profileEmail = urlParams.get('email');
+        
+        if (!profileEmail) {
+            window.location.href = 'index.html';
+        }
+        
+        async function loadProfile() {
+            try {
+                // Fetch user profile
+                const userRes = await fetch(`https://debateroom-u1gz.onrender.com/api/users/profile?email=${encodeURIComponent(profileEmail)}`);
+                if (!userRes.ok) throw new Error('User not found');
+                const userData = await userRes.json();
+                
+                console.log("[v0] Profile data:", userData);
+                
+                // Fetch user videos
+                const videosRes = await fetch(`https://debateroom-u1gz.onrender.com/api/feed/user-videos?email=${encodeURIComponent(profileEmail)}`);
+                const videosData = await videosRes.json();
+                
+                console.log("[v0] User videos:", videosData);
+                
+                renderProfile(userData, videosData);
+            } catch (e) {
+                console.error("[v0] Error loading profile:", e);
+                document.getElementById('profileContent').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-user-slash"></i>
+                        <p>Utilisateur non trouve</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderProfile(user, videos) {
+            document.getElementById('headerTitle').innerText = user.pseudo || user.name || 'Profil';
+            
+            const avatarUrl = user.avatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+            const joinedDate = new Date(user.createdAt).toLocaleDateString('fr-FR', { 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+            });
+            
+            // Build games badges
+            let gamesHTML = '';
+            if (user.games && user.games.length > 0) {
+                user.games.forEach(game => {
+                    const rank = user.details?.[game]?.rank || '-';
+                    gamesHTML += `
+                        <div class="game-badge">
+                            <span class="game-name">${game.toUpperCase()}</span>
+                            <span class="game-rank">${rank}</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Build videos grid
+            let videosHTML = '';
+            if (videos && videos.length > 0) {
+                videos.forEach(video => {
+                    const validCount = video.votes?.valid?.length || 0;
+                    const intingCount = video.votes?.inting?.length || 0;
+                    const thumbUrl = video.videoUrl.includes('cloudinary') 
+                        ? video.videoUrl.replace('/upload/', '/upload/so_0,c_fill,w_300,h_500/').replace('.mp4', '.jpg')
+                        : '/placeholder.svg?height=500&width=300';
+                    
+                    videosHTML += `
+                        <div class="video-thumb" style="background-image:url('${thumbUrl}')" onclick="window.location.href='index.html?room=${video.slug}'">
+                            <div class="video-thumb-overlay">
+                                <div class="video-thumb-stats">
+                                    <span class="video-thumb-stat"><i class="fa-solid fa-check"></i> ${validCount}</span>
+                                    <span class="video-thumb-stat"><i class="fa-solid fa-xmark"></i> ${intingCount}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                videosHTML = `
+                    <div class="empty-state" style="grid-column:1/-1;">
+                        <i class="fa-solid fa-video-slash"></i>
+                        <p>Aucune video publiee</p>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('profileContent').innerHTML = `
+                <div class="profile-header">
+                    <div class="profile-avatar" style="background-image:url('${avatarUrl}')"></div>
+                    <h1 class="profile-name">${user.name || user.pseudo || 'Anonyme'}</h1>
+                    <p class="profile-pseudo">@${user.pseudo || 'user'}</p>
+                    ${user.bio ? `<p class="profile-bio">${user.bio}</p>` : ''}
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-value elo">${user.elo || 1000}</span>
+                            <span class="stat-label">Score Juge</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">${videos?.length || 0}</span>
+                            <span class="stat-label">Debats</span>
+                        </div>
+                        ${user.age ? `
+                        <div class="stat-item">
+                            <span class="stat-value">${user.age}</span>
+                            <span class="stat-label">Ans</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                    ${gamesHTML ? `<div class="profile-games">${gamesHTML}</div>` : ''}
+                    <div class="profile-joined">
+                        <i class="fa-solid fa-calendar"></i>
+                        Membre depuis le ${joinedDate}
+                    </div>
+                </div>
+                
+                <h2 class="section-title">Debats publies</h2>
+                <div class="videos-grid">
+                    ${videosHTML}
+                </div>
+            `;
+        }
+        
+        loadProfile();
+    </script>
+</body>
+</html>
