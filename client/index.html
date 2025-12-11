@@ -70,6 +70,11 @@
         .video-container { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; }
         .video-container video, .video-container iframe { width:100%; height:100%; object-fit:cover; pointer-events:none; }
         
+        /* Add mute button styles */
+        .mute-btn { position:absolute; top:16px; right:16px; width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,0.5); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-size:1rem; color:#fff; cursor:pointer; z-index:20; transition:0.2s; }
+        .mute-btn:hover { background:rgba(0,0,0,0.7); transform:scale(1.05); }
+        .mute-btn.muted { color:var(--text-secondary); }
+        
         .pause-indicator { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); width:80px; height:80px; background:rgba(0,0,0,0.5); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:rgba(255,255,255,0.9); pointer-events:none; opacity:0; transition:transform 0.15s ease, opacity 0.15s ease; z-index:20; }
         .pause-indicator.show { transform:translate(-50%, -50%) scale(1); opacity:1; }
         .pause-indicator.hide-anim { transform:translate(-50%, -50%) scale(1.3); opacity:0; }
@@ -416,7 +421,13 @@
     // ==========================================
     // VIDEO PLAYER HELPER
     // ==========================================
+    let globalMuted = localStorage.getItem('videoMuted') !== 'false'; // Default muted
+    
     function getPlayerHTML(room) {
+        const mutedAttr = globalMuted ? 'muted' : '';
+        const muteIcon = globalMuted ? 'fa-volume-xmark' : 'fa-volume-high';
+        const muteClass = globalMuted ? 'muted' : '';
+        
         if (room.videoUrl.includes('youtube.com/embed')) {
             return `<iframe src="${room.videoUrl}" style="width:100%;height:100%;border:none;" allow="autoplay"></iframe>`;
         }
@@ -425,7 +436,8 @@
                 <iframe src="${room.videoUrl}" style="width:100%;height:120%;border:none;transform:scale(1.1);"></iframe>
             </div>`;
         }
-        return `<video src="${room.videoUrl}" loop playsinline autoplay style="width:100%;height:100%;object-fit:cover;"></video>
+        return `<video src="${room.videoUrl}" loop playsinline autoplay ${mutedAttr} style="width:100%;height:100%;object-fit:cover;"></video>
+                <div class="mute-btn ${muteClass}" onclick="toggleMute(event, this)"><i class="fa-solid ${muteIcon}"></i></div>
                 <div class="pause-indicator"><i class="fa-solid fa-pause"></i></div>
                 <div class="speed-indicator"><i class="fa-solid fa-forward-fast"></i> 2x</div>
                 <div class="video-progress-container">
@@ -434,8 +446,32 @@
     }
 
     // ==========================================
-    // TAP TO PAUSE & 2X SPEED
+    // TAP TO PAUSE & 2X SPEED & MUTE
+    window.toggleMute = (e, btn) => {
+        e.stopPropagation();
+        globalMuted = !globalMuted;
+        localStorage.setItem('videoMuted', globalMuted ? 'true' : 'false');
+        
+        // Update all videos
+        document.querySelectorAll('.video-slide video').forEach(video => {
+            video.muted = globalMuted;
+        });
+        
+        // Update all mute buttons
+        document.querySelectorAll('.mute-btn').forEach(muteBtn => {
+            const icon = muteBtn.querySelector('i');
+            if (globalMuted) {
+                muteBtn.classList.add('muted');
+                icon.className = 'fa-solid fa-volume-xmark';
+            } else {
+                muteBtn.classList.remove('muted');
+                icon.className = 'fa-solid fa-volume-high';
+            }
+        });
+    };
+
     // ==========================================
+    // TAP TO PAUSE & 2X SPEED
     function setupTapToPause(slide) {
         const container = slide.querySelector('.video-container');
         const video = slide.querySelector('video');
@@ -443,6 +479,7 @@
         const speedIndicator = slide.querySelector('.speed-indicator');
         const progressContainer = slide.querySelector('.video-progress-container');
         const progressBar = slide.querySelector('.video-progress-bar');
+        const muteBtn = slide.querySelector('.mute-btn');
         
         if (!video) return;
         
@@ -497,7 +534,7 @@
 
         // Mobile: touch hold for 2x speed
         container.addEventListener('touchstart', (e) => {
-            if (e.target.closest('.side-actions') || e.target.closest('.video-info') || e.target.closest('.video-progress-container')) return;
+            if (e.target.closest('.side-actions') || e.target.closest('.video-info') || e.target.closest('.video-progress-container') || e.target.closest('.mute-btn')) return;
             
             const touch = e.touches[0];
             const rect = container.getBoundingClientRect();
@@ -535,7 +572,7 @@
         
         // Desktop: mouse hold for 2x speed
         container.addEventListener('mousedown', (e) => {
-            if (e.target.closest('.side-actions') || e.target.closest('.video-info') || e.target.closest('.video-progress-container')) return;
+            if (e.target.closest('.side-actions') || e.target.closest('.video-info') || e.target.closest('.video-progress-container') || e.target.closest('.mute-btn')) return;
             
             const rect = container.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
@@ -562,7 +599,7 @@
         
         // Tap to pause/play
         container.addEventListener('click', (e) => {
-            if (e.target.closest('.side-actions') || e.target.closest('.video-info') || e.target.closest('.video-progress-container')) return;
+            if (e.target.closest('.side-actions') || e.target.closest('.video-info') || e.target.closest('.video-progress-container') || e.target.closest('.mute-btn')) return;
             if (isSpeedUp) return;
             if (!pauseIndicator) return;
             
@@ -729,7 +766,7 @@
                     }
                     
                     const video = entry.target.querySelector('video');
-                    if (video) video.play();
+                    if (video && !video.paused) video.play();
                     
                     updateDeskChat(roomId);
                 } else {
@@ -737,7 +774,14 @@
                     const pauseIndicator = entry.target.querySelector('.pause-indicator');
                     const progressBar = entry.target.querySelector('.video-progress-bar');
                     
-                    if (video) { video.pause(); video.currentTime = 0; }
+                    if (video) { 
+                        video.pause(); 
+                        video.currentTime = 0;
+                        // Reset mute when leaving viewport only if it's not the global muted state
+                        // If globalMuted is true, it should remain muted.
+                        // If globalMuted is false, it should be unmuted.
+                        video.muted = globalMuted;
+                    }
                     if (pauseIndicator) pauseIndicator.classList.remove('show', 'hide-anim');
                     if (progressBar) progressBar.style.width = '0%';
                 }
@@ -756,7 +800,7 @@
             
             const deskList = document.getElementById('desktopChatMessages');
             if (deskList) {
-                deskList.innerHTML = '<div class="msg-system">Debat commence</div>';
+                deskList.innerHTML = '<div class="msg-system">Selectionnez un debat</div>';
                 currentChatMessages.forEach(msg => addMessageToUI(deskList, msg, data.ownerEmail === user.email));
                 deskList.scrollTop = deskList.scrollHeight;
             }
