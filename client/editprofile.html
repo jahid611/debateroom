@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DebateRoom | Profil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&family=Oswald:wght@500&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root { --bg:#050505; --card:#121212; --accent:#D4AF37; --text:#fff; --border:rgba(255,255,255,0.1); }
+        * { box-sizing:border-box; margin:0; padding:0; font-family:'Outfit', sans-serif; }
+        body { background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:40px 20px; }
+
+        .header-back { position:fixed; top:20px; left:20px; color:#fff; text-decoration:none; font-size:1.2rem; display:flex; align-items:center; gap:10px; z-index:100; transition:0.3s; }
+        .header-back:hover { color:var(--accent); }
+
+        .profile-container { width:100%; max-width:600px; background:var(--card); border:1px solid var(--border); border-radius:24px; padding:40px; box-shadow:0 20px 50px rgba(0,0,0,0.5); }
+        
+        h1 { font-family:'Oswald'; font-size:2rem; margin-bottom:30px; text-align:center; }
+        h1 span { color:var(--accent); }
+
+        /* AVATAR UPLOAD */
+        .avatar-section { display:flex; justify-content:center; margin-bottom:30px; position:relative; }
+        .avatar-wrapper { width:120px; height:120px; border-radius:50%; overflow:hidden; border:2px solid var(--border); position:relative; cursor:pointer; }
+        .avatar-wrapper img { width:100%; height:100%; object-fit:cover; }
+        .avatar-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; opacity:0; transition:0.3s; }
+        .avatar-wrapper:hover .avatar-overlay { opacity:1; }
+        .avatar-wrapper:hover { border-color:var(--accent); }
+
+        /* FORM */
+        .form-group { margin-bottom:20px; }
+        label { display:block; margin-bottom:8px; color:#888; font-size:0.9rem; }
+        input, textarea { width:100%; background:#000; border:1px solid var(--border); padding:15px; border-radius:12px; color:#fff; outline:none; transition:0.3s; font-size:1rem; }
+        textarea { resize:vertical; min-height:100px; }
+        input:focus, textarea:focus { border-color:var(--accent); }
+
+        .divider { height:1px; background:var(--border); margin:30px 0; }
+        .danger-zone { border:1px solid rgba(231,76,60,0.3); padding:20px; border-radius:12px; background:rgba(231,76,60,0.05); }
+        .danger-title { color:#e74c3c; font-weight:bold; margin-bottom:15px; }
+
+        .btn-save { width:100%; padding:15px; background:var(--accent); border:none; border-radius:12px; font-weight:bold; cursor:pointer; font-size:1rem; margin-top:20px; transition:0.3s; }
+        .btn-save:hover { transform:translateY(-2px); box-shadow:0 10px 20px rgba(212,175,55,0.2); }
+
+        .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#2ecc71; color:#000; padding:12px 25px; border-radius:30px; display:none; font-weight:bold; }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="header-back"><i class="fa-solid fa-arrow-left"></i> Retour</a>
+
+    <div class="profile-container">
+        <h1>Mon <span>Profil</span></h1>
+
+        <div class="avatar-section">
+            <div class="avatar-wrapper" onclick="document.getElementById('fileInput').click()">
+                <img id="previewAvatar" src="" alt="Avatar">
+                <div class="avatar-overlay"><i class="fa-solid fa-camera" style="color:#fff; font-size:1.5rem;"></i></div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="uploadAvatar()">
+        </div>
+
+        <div class="form-group">
+            <label>Pseudo</label>
+            <input type="text" id="pseudo">
+        </div>
+
+        <div class="form-group">
+            <label>Bio</label>
+            <textarea id="bio" placeholder="Dis quelque chose sur toi..."></textarea>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="danger-zone">
+            <div class="danger-title"><i class="fa-solid fa-lock"></i> Sécurité</div>
+            <div class="form-group">
+                <label>Mot de passe actuel (pour confirmer)</label>
+                <input type="password" id="oldPass">
+            </div>
+            <div class="form-group">
+                <label>Nouveau mot de passe</label>
+                <input type="password" id="newPass">
+            </div>
+        </div>
+
+        <button class="btn-save" onclick="saveProfile()">ENREGISTRER</button>
+    </div>
+
+    <div class="toast" id="toast">Sauvegardé !</div>
+
+    <script>
+        const rawUser = localStorage.getItem('user_profile');
+        if(!rawUser) window.location.href = 'login.html';
+        let user = JSON.parse(rawUser);
+
+        // Init
+        document.getElementById('previewAvatar').src = user.picture || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+        document.getElementById('pseudo').value = user.given_name || "";
+        // Note: La bio n'est pas stockée dans le localStorage par défaut, il faudrait refetcher le user au chargement pour être propre, mais on fait simple.
+        
+        let newAvatarUrl = null;
+
+        async function uploadAvatar() {
+            const file = document.getElementById('fileInput').files[0];
+            if(!file) return;
+
+            const fd = new FormData();
+            fd.append('videoFile', file); // On utilise la même route que vidéo car c'est générique sur Cloudinary
+
+            try {
+                // Feedback visuel
+                document.querySelector('.avatar-wrapper').style.opacity = '0.5';
+                
+                const res = await fetch('https://debateroom-u1gz.onrender.com/api/video/upload', {
+                    method: 'POST', body: fd
+                });
+                const data = await res.json();
+                
+                if(data.src) {
+                    newAvatarUrl = data.src;
+                    document.getElementById('previewAvatar').src = newAvatarUrl;
+                }
+            } catch(e) { alert("Erreur upload image"); }
+            finally { document.querySelector('.avatar-wrapper').style.opacity = '1'; }
+        }
+
+        async function saveProfile() {
+            const btn = document.querySelector('.btn-save');
+            btn.innerText = "Sauvegarde...";
+            btn.disabled = true;
+
+            const payload = {
+                email: user.email,
+                pseudo: document.getElementById('pseudo').value,
+                bio: document.getElementById('bio').value,
+                currentPassword: document.getElementById('oldPass').value,
+                newPassword: document.getElementById('newPass').value
+            };
+
+            if(newAvatarUrl) payload.avatar = newAvatarUrl;
+
+            try {
+                const res = await fetch('https://debateroom-u1gz.onrender.com/api/auth/update', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if(res.ok) {
+                    // Update LocalStorage
+                    user.given_name = data.user.pseudo;
+                    user.picture = data.user.avatar;
+                    localStorage.setItem('user_profile', JSON.stringify(user));
+                    
+                    const t = document.getElementById('toast');
+                    t.style.display = 'block';
+                    setTimeout(() => t.style.display='none', 2000);
+                } else {
+                    alert(data.error);
+                }
+            } catch(e) { alert("Erreur serveur"); }
+            
+            btn.innerText = "ENREGISTRER";
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>

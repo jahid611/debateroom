@@ -118,4 +118,42 @@ router.post('/onboarding', async (req, res) => {
     }
 });
 
+// MISE À JOUR PROFIL
+router.put('/update', async (req, res) => {
+    try {
+        const { email, pseudo, bio, avatar, currentPassword, newPassword } = req.body;
+        
+        let user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: "Utilisateur introuvable" });
+
+        // Mise à jour des infos de base
+        if (pseudo) user.pseudo = pseudo;
+        if (bio) user.bio = bio;
+        if (avatar) user.avatar = avatar;
+
+        // Changement de mot de passe (Sécurisé)
+        if (newPassword) {
+            // Si l'utilisateur a un mot de passe (pas Google), on vérifie l'ancien
+            if (user.password && user.password !== currentPassword) {
+                return res.status(403).json({ error: "Mot de passe actuel incorrect" });
+            }
+            user.password = newPassword;
+            // Note: Dans un vrai projet, ici on enverrait un email de confirmation via Nodemailer
+            // Pour l'instant, on change directement.
+        }
+
+        await user.save();
+        
+        // On renvoie le user sans le mot de passe
+        const userObj = user.toObject();
+        delete userObj.password;
+        
+        res.json({ success: true, user: userObj });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+});
+
 module.exports = router;
