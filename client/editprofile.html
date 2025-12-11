@@ -11,57 +11,41 @@
         :root { --bg:#050505; --card:#121212; --accent:#D4AF37; --text:#fff; --border:rgba(255,255,255,0.1); }
         * { box-sizing:border-box; margin:0; padding:0; font-family:'Outfit', sans-serif; }
         body { background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:40px 20px; }
-
         .header-back { position:fixed; top:20px; left:20px; color:#fff; text-decoration:none; font-size:1.2rem; display:flex; align-items:center; gap:10px; z-index:100; transition:0.3s; }
         .header-back:hover { color:var(--accent); }
-
         .profile-container { width:100%; max-width:700px; background:var(--card); border:1px solid var(--border); border-radius:24px; padding:40px; box-shadow:0 20px 50px rgba(0,0,0,0.5); }
-        
         h1 { font-family:'Oswald'; font-size:2rem; margin-bottom:30px; text-align:center; border-bottom:1px solid var(--border); padding-bottom:20px; }
         h1 span { color:var(--accent); }
         h2 { font-size:1.2rem; margin:30px 0 15px; color:var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:1px; }
-
-        /* AVATAR */
         .avatar-section { display:flex; justify-content:center; margin-bottom:30px; }
         .avatar-wrapper { width:120px; height:120px; border-radius:50%; overflow:hidden; border:2px solid var(--border); position:relative; cursor:pointer; transition:0.3s; }
         .avatar-wrapper img { width:100%; height:100%; object-fit:cover; }
         .avatar-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; opacity:0; transition:0.3s; }
         .avatar-wrapper:hover .avatar-overlay { opacity:1; }
         .avatar-wrapper:hover { border-color:var(--accent); }
-
-        /* FORM */
         .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
         .form-group { margin-bottom:15px; }
         label { display:block; margin-bottom:8px; color:#888; font-size:0.9rem; }
         input, textarea, select { width:100%; background:#000; border:1px solid var(--border); padding:15px; border-radius:10px; color:#fff; outline:none; transition:0.3s; font-size:1rem; }
         textarea { resize:vertical; min-height:100px; }
         input:focus, textarea:focus, select:focus { border-color:var(--accent); }
-
-        /* GAMES EDITOR */
         .game-row { display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; margin-bottom:10px; border:1px solid transparent; transition:0.2s; }
         .game-row.active { border-color:var(--accent); background:rgba(212,175,55,0.05); }
         .game-check { display:flex; align-items:center; gap:15px; cursor:pointer; }
         .custom-checkbox { width:24px; height:24px; border:2px solid #666; border-radius:6px; display:flex; align-items:center; justify-content:center; transition:0.2s; }
         .game-row.active .custom-checkbox { background:var(--accent); border-color:var(--accent); color:#000; }
         .game-name { font-weight:600; }
-        
         .rank-select { width:150px; padding:8px; font-size:0.9rem; display:none; }
         .game-row.active .rank-select { display:block; }
-
-        /* BUTTONS */
         .btn-save { width:100%; padding:15px; background:var(--accent); border:none; border-radius:12px; font-weight:bold; cursor:pointer; font-size:1rem; margin-top:30px; transition:0.3s; text-transform:uppercase; letter-spacing:1px; }
         .btn-save:hover { transform:translateY(-2px); box-shadow:0 10px 20px rgba(212,175,55,0.2); }
-
         .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#2ecc71; color:#000; padding:12px 25px; border-radius:30px; display:none; font-weight:bold; z-index:200; }
     </style>
 </head>
 <body>
-
     <a href="index.html" class="header-back"><i class="fa-solid fa-arrow-left"></i> Retour</a>
-
     <div class="profile-container">
         <h1>Mon <span>Profil</span></h1>
-
         <div class="avatar-section">
             <div class="avatar-wrapper" onclick="document.getElementById('fileInput').click()">
                 <img id="previewAvatar" src="" alt="Avatar">
@@ -69,7 +53,6 @@
             </div>
             <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="uploadAvatar()">
         </div>
-
         <h2>Identité</h2>
         <div class="grid-2">
             <div class="form-group">
@@ -89,11 +72,8 @@
             <label>Bio</label>
             <textarea id="bio" placeholder="Parle-nous de toi..."></textarea>
         </div>
-
         <h2>Mes Jeux & Rangs</h2>
-        <div id="gamesContainer">
-            </div>
-
+        <div id="gamesContainer"></div>
         <h2 style="color:#e74c3c; margin-top:40px;">Sécurité</h2>
         <div class="form-group">
             <label>Nouveau mot de passe (Laisser vide si inchangé)</label>
@@ -103,19 +83,15 @@
             <label>Mot de passe actuel (Requis pour changer)</label>
             <input type="password" id="oldPass">
         </div>
-
         <button class="btn-save" onclick="saveProfile()">SAUVEGARDER</button>
     </div>
-
     <div class="toast" id="toast">Profil mis à jour !</div>
-
     <script>
-        // 1. AUTH CHECK
+        // 1. AUTH & DONNÉES
         const rawUser = localStorage.getItem('user_profile');
         if(!rawUser) window.location.href = 'login.html';
         let user = JSON.parse(rawUser);
 
-        // CONFIG JEUX
         const gameData = {
             'lol': { name: 'League of Legends', ranks: ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','Grandmaster','Challenger'] },
             'valorant': { name: 'Valorant', ranks: ['Iron','Bronze','Silver','Gold','Platinum','Diamond','Ascendant','Immortal','Radiant'] },
@@ -123,60 +99,46 @@
             'fortnite': { name: 'Fortnite', ranks: ['Bronze','Silver','Gold','Platinum','Diamond','Elite','Champion','Unreal'] }
         };
 
-        // 2. INIT DATA
+        // 2. PRÉ-REMPLISSAGE
         function init() {
-            // Avatar
+            console.log("---- DONNÉES UTILISATEUR CHARGÉES ----");
+            console.log(user);
+
             document.getElementById('previewAvatar').src = user.picture || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
             
-            // Noms (On sépare le nom complet si besoin)
             const fullName = user.name || "";
             const parts = fullName.split(' ');
             document.getElementById('prenom').value = parts[0] || "";
             document.getElementById('nom').value = parts.slice(1).join(' ') || "";
-            document.getElementById('pseudo').value = user.given_name || ""; // given_name stocke le pseudo dans notre logique locale
-            
-            // Note: Pour avoir la bio et les jeux à jour, idéalement il faudrait refaire un fetch du user complet depuis le backend.
-            // Pour l'instant on initialise les jeux à vide, l'utilisateur devra les recocher s'ils ne sont pas en cache.
-            fetchFullUserData();
+            document.getElementById('pseudo').value = user.given_name || ""; // given_name = pseudo
+            document.getElementById('bio').value = user.bio || "";
+
+            renderGamesUI(user.games || [], user.details || {});
         }
 
-        // Récupérer les vraies données fraîches du backend
-        async function fetchFullUserData() {
-            try {
-                // On utilise une astuce : on tente un login silencieux ou une route /me si elle existait.
-                // Ici on va faire avec ce qu'on a, mais on construit l'interface jeux.
-                renderGamesUI([]); 
-            } catch(e) {}
-        }
-
-        function renderGamesUI(userGames, userDetails = {}) {
+        function renderGamesUI(userGames, userDetails) {
             const container = document.getElementById('gamesContainer');
             container.innerHTML = '';
-
             for (const [key, data] of Object.entries(gameData)) {
-                // Est-ce que l'utilisateur joue à ce jeu ? (Simulation pour l'instant, sera rempli par save)
-                // Dans une vraie app, on checkerait userGames.includes(key)
+                const isActive = userGames.includes(key);
+                const userRank = (userDetails[key] && userDetails[key].rank) ? userDetails[key].rank : "Unranked";
                 
                 const row = document.createElement('div');
-                row.className = 'game-row';
+                row.className = `game-row ${isActive ? 'active' : ''}`;
                 row.id = `game-${key}`;
-                row.onclick = (e) => {
-                    if(e.target.tagName !== 'SELECT') toggleGame(key);
-                };
+                row.onclick = (e) => { if(e.target.tagName !== 'SELECT') toggleGame(key); };
 
-                let options = `<option value="Unranked">Unranked</option>`;
+                let options = `<option value="Unranked" ${userRank === 'Unranked' ? 'selected' : ''}>Unranked</option>`;
                 data.ranks.forEach(r => {
-                    options += `<option value="${r}">${r}</option>`;
+                    options += `<option value="${r}" ${userRank === r ? 'selected' : ''}>${r}</option>`;
                 });
 
                 row.innerHTML = `
                     <div class="game-check">
-                        <div class="custom-checkbox"><i class="fa-solid fa-check" style="display:none; font-size:0.8rem;"></i></div>
+                        <div class="custom-checkbox"><i class="fa-solid fa-check" style="${isActive ? 'display:block' : 'display:none'}; font-size:0.8rem;"></i></div>
                         <span class="game-name">${data.name}</span>
                     </div>
-                    <select class="rank-select" id="rank-${key}" onclick="event.stopPropagation()">
-                        ${options}
-                    </select>
+                    <select class="rank-select" id="rank-${key}" onclick="event.stopPropagation()">${options}</select>
                 `;
                 container.appendChild(row);
             }
@@ -189,11 +151,12 @@
             icon.style.display = row.classList.contains('active') ? 'block' : 'none';
         }
 
+        // 3. UPLOAD AVATAR
         let newAvatarUrl = null;
-
         async function uploadAvatar() {
             const file = document.getElementById('fileInput').files[0];
             if(!file) return;
+            console.log("📸 Début upload Avatar...", file.name);
             
             const fd = new FormData();
             fd.append('videoFile', file);
@@ -207,24 +170,30 @@
                 if(data.src) {
                     newAvatarUrl = data.src;
                     document.getElementById('previewAvatar').src = newAvatarUrl;
+                    console.log("✅ Avatar uploadé avec succès sur Cloudinary ! URL :", newAvatarUrl);
+                } else {
+                    console.error("❌ Erreur upload Cloudinary :", data.error);
+                    alert("Erreur lors de l'upload de l'image.");
                 }
-            } catch(e) { alert("Erreur upload"); }
+            } catch(e) { 
+                console.error("❌ Exception upload :", e);
+                alert("Erreur de connexion pour l'upload.");
+            }
             finally { document.querySelector('.avatar-wrapper').style.opacity = '1'; }
         }
 
+        // 4. SAUVEGARDE GLOBALE
         async function saveProfile() {
             const btn = document.querySelector('.btn-save');
             btn.innerText = "Sauvegarde..."; btn.disabled = true;
+            console.log("💾 Début sauvegarde du profil...");
 
-            // Récupération des jeux actifs
             const activeGames = [];
             const details = {};
-            
             document.querySelectorAll('.game-row.active').forEach(row => {
                 const key = row.id.replace('game-', '');
                 activeGames.push(key);
-                const rank = document.getElementById(`rank-${key}`).value;
-                details[key] = { rank: rank };
+                details[key] = { rank: document.getElementById(`rank-${key}`).value };
             });
 
             const payload = {
@@ -239,7 +208,12 @@
                 details: details
             };
 
-            if(newAvatarUrl) payload.avatar = newAvatarUrl;
+            if(newAvatarUrl) {
+                payload.avatar = newAvatarUrl;
+                console.log("👉 URL du nouvel avatar incluse dans le payload :", newAvatarUrl);
+            } else {
+                console.log("👉 Aucun nouvel avatar à sauvegarder.");
+            }
 
             try {
                 const res = await fetch('https://debateroom-u1gz.onrender.com/api/auth/update', {
@@ -250,26 +224,31 @@
                 const data = await res.json();
 
                 if(res.ok) {
-                    // Update Local Storage
+                    console.log("✅ Sauvegarde réussie ! Mise à jour du LocalStorage.");
                     user.name = data.user.name;
-                    user.given_name = data.user.pseudo; // On utilise given_name pour le pseudo dans l'app
+                    user.given_name = data.user.pseudo;
                     user.picture = data.user.avatar;
+                    user.bio = data.user.bio;
+                    user.games = data.user.games;
+                    user.details = data.user.details;
                     localStorage.setItem('user_profile', JSON.stringify(user));
 
                     const t = document.getElementById('toast');
                     t.style.display = 'block';
                     setTimeout(() => t.style.display='none', 2000);
                 } else {
+                    console.error("❌ Erreur API Update :", data.error);
                     alert("Erreur: " + data.error);
                 }
-            } catch(e) { alert("Erreur serveur"); }
+            } catch(e) { 
+                console.error("❌ Exception Sauvegarde :", e);
+                alert("Erreur serveur"); 
+            }
             
             btn.innerText = "SAUVEGARDER"; btn.disabled = false;
         }
 
         init();
-        // Render initial UI
-        renderGamesUI();
     </script>
 </body>
 </html>
