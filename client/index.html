@@ -598,11 +598,15 @@
         
         // --- AFFICHAGE INTELLIGENT (Vidéo vs Youtube) ---
         function getPlayerHTML(room) {
-            // Si le lien contient "youtube.com/embed", on met une iframe
+            // 1. YouTube Embed
             if (room.videoUrl.includes('youtube.com/embed')) {
                 return `<iframe src="${room.videoUrl}" style="width:100%; height:100%; border:none; pointer-events:none;" allow="autoplay; encrypted-media"></iframe>`;
             } 
-            // Sinon, c'est un fichier MP4 classique (TikTok, Upload, Outplayed)
+            // 2. TikTok Embed (NOUVEAU)
+            else if (room.videoUrl.includes('tiktok.com/embed')) {
+                return `<iframe src="${room.videoUrl}" style="width:100%; height:100%; border:none; border-radius:12px;"></iframe>`;
+            }
+            // 3. Fichier MP4 classique (Upload, Outplayed...)
             else {
                 return `<video src="${room.videoUrl}" loop playsinline muted></video>`;
             }
