@@ -801,7 +801,7 @@
             const deskList = document.getElementById('desktopChatMessages');
             if (deskList) {
                 deskList.innerHTML = '<div class="msg-system">Selectionnez un debat</div>';
-                currentChatMessages.forEach(msg => addMessageToUI(deskList, msg, data.ownerEmail === user.email));
+                renderMessagesWithReplies(deskList, currentChatMessages, data.ownerEmail === user.email);
                 deskList.scrollTop = deskList.scrollHeight;
             }
 
@@ -930,6 +930,41 @@
             list.dataset.room = roomId;
         }
     }
+    
+    function renderMessagesWithReplies(container, messages, isOwner) {
+        // Build a map of replies grouped by parent message ID
+        const repliesMap = {};
+        const rootMessages = [];
+        
+        messages.forEach(msg => {
+            if (msg.replyTo) {
+                // This is a reply - add to repliesMap
+                if (!repliesMap[msg.replyTo]) {
+                    repliesMap[msg.replyTo] = [];
+                }
+                repliesMap[msg.replyTo].push(msg);
+            } else {
+                // This is a root message
+                rootMessages.push(msg);
+            }
+        });
+        
+        // Render only root messages, with their replies attached
+        rootMessages.forEach(msg => {
+            msg.replies = repliesMap[msg._id] || [];
+            addMessageToUI(container, msg, isOwner);
+        });
+        
+        // Also render orphan replies (replies to deleted messages) as root messages
+        messages.forEach(msg => {
+            if (msg.replyTo) {
+                const parentExists = messages.some(m => m._id === msg.replyTo);
+                if (!parentExists) {
+                    addMessageToUI(container, msg, isOwner);
+                }
+            }
+        });
+    }
 
     function addMessageToUI(container, msg, isOwner) {
         if (!container) return;
@@ -937,17 +972,20 @@
         const avatarUrl = msg.avatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
         
         let badgesHTML = '';
-        if (msg.games && msg.games.length > 0 && msg.details) {
-            const firstGame = msg.games[0];
-            const gameDetails = msg.details[firstGame];
-            if (gameDetails && gameDetails.rank) {
-                let popupRows = '';
-                for (const g of msg.games) {
-                    if (msg.details[g] && msg.details[g].rank) {
-                        popupRows += `<div class="badge-row"><span>${g.toUpperCase()}</span><span class="rank">${msg.details[g].rank}</span></div>`;
+        if (msg.games && msg.details) {
+            const gameKeys = Object.keys(msg.details);
+            if (gameKeys.length > 0) {
+                const firstGameKey = gameKeys[0];
+                const gameDetails = msg.details[firstGameKey];
+                if (gameDetails && gameDetails.rank) {
+                    let popupRows = '';
+                    for (const gKey in msg.details) {
+                        if (msg.details[gKey] && msg.details[gKey].rank) {
+                            popupRows += `<div class="badge-row"><span>${gKey.toUpperCase()}</span><span class="rank">${msg.details[gKey].rank}</span></div>`;
+                        }
                     }
+                    badgesHTML = `<div class="msg-badges"><span class="badge-main">${firstGameKey.toUpperCase()} ${gameDetails.rank}</span><div class="badge-popup">${popupRows}</div></div>`;
                 }
-                badgesHTML = `<div class="msg-badges"><span class="badge-main">${firstGame.toUpperCase()} ${gameDetails.rank}</span><div class="badge-popup">${popupRows}</div></div>`;
             }
         }
 
@@ -974,24 +1012,43 @@
             `;
         }
         
-        // Replies dropdown if this message has replies
         let repliesHTML = '';
         if (msg.replies && msg.replies.length > 0) {
+            const repliesItems = msg.replies.map(reply => {
+                const replyAvatarUrl = reply.avatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+                const replyLikeCount = reply.likes?.length || 0;
+                const replyIsLiked = reply.likes?.includes(user.email);
+                const replyLikedClass = replyIsLiked ? 'liked' : '';
+                const replyHeartIcon = replyIsLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+                
+                return `
+                    <div class="msg-reply-item" id="msg-${reply._id}">
+                        <div class="msg-header">
+                            <div class="msg-avatar" style="background-image:url('${replyAvatarUrl}')"></div>
+                            <span class="msg-author">${reply.username}</span>
+                        </div>
+                        <div class="msg-text">${reply.text}</div>
+                        <div class="msg-actions" style="padding-left:30px;">
+                            <button class="msg-action-btn ${replyLikedClass}" id="like-btn-${reply._id}" onclick="toggleLikeMessage('${reply._id}', '${reply.roomId}')">
+                                <i class="${replyHeartIcon}"></i>
+                                <span class="msg-like-count" id="like-count-${reply._id}">${replyLikeCount > 0 ? replyLikeCount : ''}</span>
+                            </button>
+                            <button class="msg-action-btn" onclick="startReply('${msg._id}', '${reply.username}', \`${(reply.text || '').replace(/`/g, "'").replace(/\\/g, "\\\\").substring(0, 50)}\`)">
+                                <i class="fa-regular fa-comment"></i>
+                                <span>Repondre</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
             repliesHTML = `
                 <div class="msg-replies-toggle" onclick="toggleReplies(this)">
                     <i class="fa-solid fa-chevron-down"></i>
-                    <span>${msg.replies.length} reponse${msg.replies.length > 1 ? 's' : ''}</span>
+                    <span>Voir ${msg.replies.length} reponse${msg.replies.length > 1 ? 's' : ''}</span>
                 </div>
                 <div class="msg-replies-container">
-                    ${msg.replies.map(reply => `
-                        <div class="msg-reply-item">
-                            <div class="msg-header">
-                                <div class="msg-avatar" style="background-image:url('${reply.avatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'}')"></div>
-                                <span class="msg-author">${reply.username}</span>
-                            </div>
-                            <div class="msg-text">${reply.text}</div>
-                        </div>
-                    `).join('')}
+                    ${repliesItems}
                 </div>
             `;
         }
@@ -1020,108 +1077,78 @@
         container.appendChild(div);
     }
 
-    window.scrollToMessage = (messageId) => {
-        const msgElement = document.getElementById(`msg-${messageId}`);
-        if (msgElement) {
-            msgElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            msgElement.style.background = 'rgba(212,175,55,0.15)';
-            setTimeout(() => { msgElement.style.background = ''; }, 1500);
-        }
-    };
-
-    window.toggleReplies = (toggle) => {
-        const container = toggle.nextElementSibling;
-        if (!container) return;
-        container.classList.toggle('expanded');
-        toggle.classList.toggle('expanded');
-    };
-
-    window.startReply = (messageId, username, text) => {
-        replyingTo = { messageId, username, text };
-        
-        const desktopIndicator = document.getElementById('desktopReplyIndicator');
-        const mobileIndicator = document.getElementById('mobileReplyIndicator');
-        const desktopUsername = document.getElementById('desktopReplyUsername');
-        const mobileUsername = document.getElementById('mobileReplyUsername');
-        
-        if (desktopIndicator) {
-            desktopIndicator.classList.add('active');
-            desktopUsername.innerText = '@' + username;
-        }
-        if (mobileIndicator) {
-            mobileIndicator.classList.add('active');
-            mobileUsername.innerText = '@' + username;
-        }
-        
-        const isMobile = window.innerWidth <= 900;
-        if (isMobile) {
-            document.getElementById('mobileChatInput').focus();
-        } else {
-            document.getElementById('desktopChatInput').focus();
-        }
-    };
-
-    window.cancelReply = (platform) => {
-        replyingTo = null;
-        document.getElementById('desktopReplyIndicator')?.classList.remove('active');
-        document.getElementById('mobileReplyIndicator')?.classList.remove('active');
-    };
-
-    window.toggleLikeMessage = (messageId, roomId) => {
-        const likeBtn = document.getElementById(`like-btn-${messageId}`);
-        const likeCountEl = document.getElementById(`like-count-${messageId}`);
-        
-        if (!likeBtn) return;
-        
-        const isCurrentlyLiked = likeBtn.classList.contains('liked');
-        
-        if (isCurrentlyLiked) {
-            likeBtn.classList.remove('liked');
-            likeBtn.querySelector('i').className = 'fa-regular fa-heart';
-            const currentCount = parseInt(likeCountEl.innerText) || 0;
-            likeCountEl.innerText = currentCount > 1 ? currentCount - 1 : '';
-        } else {
-            likeBtn.classList.add('liked');
-            likeBtn.querySelector('i').className = 'fa-solid fa-heart';
-            const currentCount = parseInt(likeCountEl.innerText) || 0;
-            likeCountEl.innerText = currentCount + 1;
-        }
-        
-        socket.emit('toggle_like_message', { messageId, roomId, userEmail: user.email });
-    };
-
-    socket.on('message_liked', (data) => {
-        const likeBtn = document.getElementById(`like-btn-${data.messageId}`);
-        const likeCountEl = document.getElementById(`like-count-${data.messageId}`);
-        
-        if (likeBtn && likeCountEl) {
-            const isLiked = data.likes.includes(user.email);
-            
-            if (isLiked) {
-                likeBtn.classList.add('liked');
-                likeBtn.querySelector('i').className = 'fa-solid fa-heart';
-            } else {
-                likeBtn.classList.remove('liked');
-                likeBtn.querySelector('i').className = 'fa-regular fa-heart';
-            }
-            
-            likeCountEl.innerText = data.likes.length > 0 ? data.likes.length : '';
-        }
-    });
-
     socket.on('receive_message', (msg) => {
         if (msg.roomId === currentRoomId) {
             const deskList = document.getElementById('desktopChatMessages');
             const mobileList = document.getElementById('mobileChatMessages');
             
-            if (deskList && deskList.dataset.room === msg.roomId) {
-                addMessageToUI(deskList, msg, false);
-                deskList.scrollTop = deskList.scrollHeight;
-            }
-            
-            if (mobileList && document.getElementById('mobileChat').classList.contains('open') && currentRoomId === msg.roomId) {
-                addMessageToUI(mobileList, msg, false);
-                mobileList.scrollTop = mobileList.scrollHeight;
+            // If this is a reply, add it to the parent's replies dropdown
+            if (msg.replyTo) {
+                const parentMsg = document.getElementById(`msg-${msg.replyTo}`);
+                if (parentMsg) {
+                    // Find or create the replies container
+                    let repliesToggle = parentMsg.querySelector('.msg-replies-toggle');
+                    let repliesContainer = parentMsg.querySelector('.msg-replies-container');
+                    
+                    if (!repliesContainer) {
+                        // Create the replies dropdown
+                        const repliesHTML = `
+                            <div class="msg-replies-toggle" onclick="toggleReplies(this)">
+                                <i class="fa-solid fa-chevron-down"></i>
+                                <span>Voir 1 reponse</span>
+                            </div>
+                            <div class="msg-replies-container expanded">
+                            </div>
+                        `;
+                        parentMsg.insertAdjacentHTML('beforeend', repliesHTML);
+                        repliesToggle = parentMsg.querySelector('.msg-replies-toggle');
+                        repliesContainer = parentMsg.querySelector('.msg-replies-container');
+                        repliesToggle.classList.add('expanded');
+                    }
+                    
+                    // Add the new reply to the container
+                    const replyAvatarUrl = msg.avatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+                    const replyHTML = `
+                        <div class="msg-reply-item" id="msg-${msg._id}">
+                            <div class="msg-header">
+                                <div class="msg-avatar" style="background-image:url('${replyAvatarUrl}')"></div>
+                                <span class="msg-author">${msg.username}</span>
+                            </div>
+                            <div class="msg-text">${msg.text}</div>
+                            <div class="msg-actions" style="padding-left:30px;">
+                                <button class="msg-action-btn" id="like-btn-${msg._id}" onclick="toggleLikeMessage('${msg._id}', '${msg.roomId}')">
+                                    <i class="fa-regular fa-heart"></i>
+                                    <span class="msg-like-count" id="like-count-${msg._id}"></span>
+                                </button>
+                                <button class="msg-action-btn" onclick="startReply('${msg.replyTo}', '${msg.username}', \`${(msg.text || '').replace(/`/g, "'").replace(/\\/g, "\\\\").substring(0, 50)}\`)">
+                                    <i class="fa-regular fa-comment"></i>
+                                    <span>Repondre</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    repliesContainer.insertAdjacentHTML('beforeend', replyHTML);
+                    
+                    // Update the count
+                    const countSpan = repliesToggle.querySelector('span');
+                    const currentCount = repliesContainer.querySelectorAll('.msg-reply-item').length;
+                    countSpan.innerText = `Voir ${currentCount} reponse${currentCount > 1 ? 's' : ''}`;
+                    
+                    // Auto-expand to show the new reply
+                    repliesContainer.classList.add('expanded');
+                    repliesToggle.classList.add('expanded');
+                }
+            } else {
+                // Regular message - add normally
+                if (deskList && deskList.dataset.room === msg.roomId) {
+                    addMessageToUI(deskList, msg, false);
+                    deskList.scrollTop = deskList.scrollHeight;
+                }
+                
+                if (mobileList && document.getElementById('mobileChat').classList.contains('open') && currentRoomId === msg.roomId) {
+                    addMessageToUI(mobileList, msg, false);
+                    mobileList.scrollTop = mobileList.scrollHeight;
+                }
             }
             
             currentChatMessages.push(msg);
@@ -1133,68 +1160,6 @@
             }
         }
     });
-
-    window.sendDesktopMessage = () => {
-        const input = document.getElementById('desktopChatInput');
-        if (input.value && currentRoomId) {
-            const messageData = {
-                roomId: currentRoomId,
-                username: user.pseudo || user.given_name || user.name,
-                userEmail: user.email,
-                text: input.value,
-                avatar: userAvatarUrl,
-                games: user.games,
-                details: user.details
-            };
-            
-            if (replyingTo) {
-                messageData.replyTo = replyingTo.messageId;
-                messageData.replyToUsername = replyingTo.username;
-                messageData.replyToText = replyingTo.text.substring(0, 50);
-            }
-            
-            socket.emit('send_message', messageData);
-            input.value = '';
-            cancelReply('desktop');
-        }
-    };
-
-    window.sendMobileMessage = () => {
-        const input = document.getElementById('mobileChatInput');
-        if (input.value && currentRoomId) {
-            const messageData = {
-                roomId: currentRoomId,
-                username: user.pseudo || user.given_name || user.name,
-                userEmail: user.email,
-                text: input.value,
-                avatar: userAvatarUrl,
-                games: user.games,
-                details: user.details
-            };
-            
-            if (replyingTo) {
-                messageData.replyTo = replyingTo.messageId;
-                messageData.replyToUsername = replyingTo.username;
-                messageData.replyToText = replyingTo.text.substring(0, 50);
-            }
-            
-            socket.emit('send_message', messageData);
-            input.value = '';
-            cancelReply('mobile');
-        }
-    };
-
-    window.deleteMsg = (messageId, roomId) => {
-        if (confirm("Supprimer ce message ?")) {
-            socket.emit('delete_message', { messageId, roomId, userEmail: user.email });
-        }
-    };
-
-    socket.on('message_deleted', (messageId) => {
-        const msgElement = document.getElementById(`msg-${messageId}`);
-        if (msgElement) msgElement.remove();
-    });
-
     // ==========================================
     // UI HELPERS
     // ==========================================
