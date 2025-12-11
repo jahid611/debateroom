@@ -5,12 +5,13 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
+// --- IMPORTS DES MODÈLES ---
 const Message = require('./models/Message');
 const Room = require('./models/Room'); 
+const User = require('./models/User'); // <--- INDISPENSABLE POUR RÉCUPÉRER L'AVATAR
 
 const app = express();
 const server = http.createServer(app);
-const User = require('./models/User');
 
 app.use(cors());
 app.use(express.json());
@@ -34,12 +35,11 @@ io.on('connection', (socket) => {
         
         let room = await Room.findOne({ slug: roomId });
         if (!room) {
-            // Création automatique si room inconnue (cas rare)
-            room = new Room({ slug: roomId, votes: { valid: [], inting: [] } });
+            room = new Room({ slug: roomId, votes: { valid: [], inting: [] }, videoUrl: "", videoTitle: "Chargement..." });
             await room.save();
         }
 
-        // Récupérer l'historique
+        // Récupérer l'historique (100 derniers)
         const history = await Message.find({ roomId: roomId }).sort({ timestamp: 1 }).limit(100);
         
         const scores = {
@@ -47,22 +47,21 @@ io.on('connection', (socket) => {
             inting: room.votes?.inting?.length || 0
         };
 
-        // Envoi au client
         socket.emit('init_room', { 
             video: { src: room.videoUrl, title: room.videoTitle, platform: room.videoPlatform },
             messages: history, 
             votes: scores,
             roomId: roomId,
-            ownerEmail: room.ownerEmail // On envoie l'info du proprio pour l'affichage
+            ownerEmail: room.ownerEmail
         });
     });
 
-    // 2. CRÉATION ROOM (Avec Propriétaire)
+    // 2. CRÉATION ROOM
     socket.on('create_room', async (data) => {
         const uniqueId = `${data.game || 'room'}-${Date.now()}`;
         const newRoom = new Room({
             slug: uniqueId,
-            ownerEmail: data.userEmail, // <--- On sauvegarde le chef
+            ownerEmail: data.userEmail,
             game: data.game,
             videoUrl: data.src,
             videoTitle: data.title,
@@ -89,19 +88,23 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('update_votes', { roomId, valid: room.votes.valid.length, inting: room.votes.inting.length });
     });
 
-    // 4. CHAT (Envoi)
+    // 4. CHAT (CORRIGÉ POUR L'AVATAR)
     socket.on('send_message', async (data) => {
         try {
-            // On récupère les infos fraîches de l'utilisateur pour avoir ses rangs à jour
+            // A. ON CHERCHE L'UTILISATEUR EN BDD (Source de vérité)
             const author = await User.findOne({ email: data.userEmail });
 
+            // B. ON CRÉE LE MESSAGE AVEC LES DONNÉES À JOUR
             const newMsg = new Message({
                 roomId: data.roomId,
                 username: data.username,
-                avatar: data.avatar,
                 text: data.text,
                 userEmail: data.userEmail,
-                // ON INJECTE LES RANGS ICI
+                
+                // C'est ici le secret : on prend l'avatar de la BDD, sinon celui par défaut
+                avatar: author ? author.avatar : "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+                
+                // On met aussi les jeux/rangs à jour
                 games: author ? author.games : [],
                 details: author ? author.details : {}
             });
@@ -114,22 +117,19 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 5. CHAT (Suppression) - NOUVEAU
+    // 5. SUPPRESSION
     socket.on('delete_message', async (data) => {
-        const { messageId, roomId, userEmail } = data; // userEmail = celui qui veut supprimer
-
+        const { messageId, roomId, userEmail } = data;
         try {
             const msg = await Message.findById(messageId);
             const room = await Room.findOne({ slug: roomId });
 
             if (msg) {
-                // AUTORISATION : Soit c'est l'auteur, soit c'est le proprio du débat
                 const isAuthor = msg.userEmail === userEmail;
                 const isOwner = room && room.ownerEmail === userEmail;
 
                 if (isAuthor || isOwner) {
                     await Message.findByIdAndDelete(messageId);
-                    // On dit à tout le monde de retirer ce message de l'écran
                     io.to(roomId).emit('message_deleted', messageId);
                 }
             }
