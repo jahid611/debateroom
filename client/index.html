@@ -321,6 +321,125 @@
             color:var(--accent);
         }
         
+        /* Styles for reply et like des messages comme TikTok */
+        .message {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            animation: msgIn 0.3s ease;
+            position: relative;
+        }
+        
+        .msg-reply-preview {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            margin-left: 38px;
+            margin-bottom: 4px;
+            background: rgba(255,255,255,0.03);
+            border-left: 2px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .msg-reply-preview:hover {
+            background: rgba(255,255,255,0.06);
+        }
+        .msg-reply-preview .reply-to-user {
+            color: var(--accent);
+            font-weight: 600;
+        }
+        .msg-reply-preview .reply-to-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 200px;
+        }
+        
+        .msg-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-left: 38px;
+            margin-top: 4px;
+        }
+        
+        .msg-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: 0.2s;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: transparent;
+            border: none;
+        }
+        .msg-action-btn:hover {
+            color: var(--text);
+            background: rgba(255,255,255,0.05);
+        }
+        .msg-action-btn.liked {
+            color: #ff4757;
+        }
+        .msg-action-btn.liked i {
+            animation: likePopTikTok 0.3s ease;
+        }
+        @keyframes likePopTikTok {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+        
+        .msg-like-count {
+            font-weight: 500;
+        }
+        
+        /* Reply input bar */
+        .reply-indicator {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: rgba(212,175,55,0.1);
+            border-top: 1px solid var(--accent);
+            font-size: 0.8rem;
+        }
+        .reply-indicator.active {
+            display: flex;
+        }
+        .reply-indicator-text {
+            flex: 1;
+            color: var(--text-secondary);
+        }
+        .reply-indicator-text span {
+            color: var(--accent);
+            font-weight: 600;
+        }
+        .reply-indicator-close {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            transition: 0.2s;
+        }
+        .reply-indicator-close:hover {
+            background: rgba(255,255,255,0.2);
+            color: var(--text);
+        }
+        
         @media(max-width:900px) {
             .app-layout { grid-template-columns:1fr; grid-template-rows:1fr; } 
             .header, .chat-sidebar { display:none; }
@@ -445,6 +564,11 @@
         <div class="chat-messages" id="desktopChatMessages">
             <div class="msg-system">Selectionnez un debat</div>
         </div>
+        <!-- ADDED reply indicator for desktop -->
+        <div class="reply-indicator" id="desktopReplyIndicator">
+            <div class="reply-indicator-text">Repondre a <span id="desktopReplyUsername"></span></div>
+            <button class="reply-indicator-close" onclick="cancelReply('desktop')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
         <div class="chat-input-area">
             <input type="text" class="chat-input" id="desktopChatInput" placeholder="Votre avis...">
             <button class="chat-send" onclick="sendDesktopMessage()"><i class="fa-solid fa-paper-plane"></i></button>
@@ -477,6 +601,11 @@
         </button>
     </div>
     <div class="chat-messages" id="mobileChatMessages"></div>
+    <!-- ADDED reply indicator for mobile -->
+    <div class="reply-indicator" id="mobileReplyIndicator">
+        <div class="reply-indicator-text">Repondre a <span id="mobileReplyUsername"></span></div>
+        <button class="reply-indicator-close" onclick="cancelReply('mobile')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
     <div class="chat-input-area">
         <input type="text" class="chat-input" id="mobileChatInput" placeholder="Ajouter un commentaire...">
         <button class="chat-send" onclick="sendMobileMessage()"><i class="fa-solid fa-paper-plane"></i></button>
@@ -1079,7 +1208,27 @@
         const avatarUrl = msg.avatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
         console.log("[v0] Message avatar URL used:", avatarUrl);
 
+        // Reply preview if this message is a reply
+        let replyPreviewHTML = '';
+        if (msg.replyTo && msg.replyToUsername) {
+            const truncatedText = msg.replyToText ? (msg.replyToText.length > 30 ? msg.replyToText.substring(0, 30) + '...' : msg.replyToText) : '';
+            replyPreviewHTML = `
+                <div class="msg-reply-preview" onclick="scrollToMessage('${msg.replyTo}')">
+                    <i class="fa-solid fa-reply" style="font-size:0.65rem;"></i>
+                    <span class="reply-to-user">@${msg.replyToUsername}</span>
+                    <span class="reply-to-text">${truncatedText}</span>
+                </div>
+            `;
+        }
+
+        // Like count and state
+        const likeCount = msg.likes?.length || 0;
+        const isLiked = msg.likes?.includes(user.email);
+        const likedClass = isLiked ? 'liked' : '';
+        const heartIcon = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+
         div.innerHTML = `
+            ${replyPreviewHTML}
             <div class="msg-header">
                 <div class="msg-avatar" style="background-image:url('${avatarUrl}')"></div>
                 <span class="msg-author">${msg.username}</span>
@@ -1087,9 +1236,113 @@
                 ${deleteBtn}
             </div>
             <div class="msg-text">${msg.text}</div>
+            <div class="msg-actions">
+                <button class="msg-action-btn ${likedClass}" id="like-btn-${msg._id}" onclick="toggleLikeMessage('${msg._id}', '${msg.roomId}')">
+                    <i class="${heartIcon}"></i>
+                    <span class="msg-like-count" id="like-count-${msg._id}">${likeCount > 0 ? likeCount : ''}</span>
+                </button>
+                <button class="msg-action-btn" onclick="startReply('${msg._id}', '${msg.username}', \`${msg.text.replace(/`/g, "'").replace(/\\/g, "\\\\")}\`)">
+                    <i class="fa-regular fa-comment"></i>
+                    <span>Repondre</span>
+                </button>
+            </div>
         `;
         container.appendChild(div);
     }
+
+    window.scrollToMessage = (messageId) => {
+        const msgElement = document.getElementById(`msg-${messageId}`);
+        if (msgElement) {
+            msgElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            msgElement.style.background = 'rgba(212,175,55,0.15)';
+            setTimeout(() => {
+                msgElement.style.background = '';
+            }, 1500);
+        }
+    };
+
+    window.startReply = (messageId, username, text) => {
+        replyingTo = { messageId, username, text };
+        
+        // Show reply indicator on both desktop and mobile
+        const desktopIndicator = document.getElementById('desktopReplyIndicator');
+        const mobileIndicator = document.getElementById('mobileReplyIndicator');
+        const desktopUsername = document.getElementById('desktopReplyUsername');
+        const mobileUsername = document.getElementById('mobileReplyUsername');
+        
+        if (desktopIndicator) {
+            desktopIndicator.classList.add('active');
+            desktopUsername.innerText = '@' + username;
+        }
+        if (mobileIndicator) {
+            mobileIndicator.classList.add('active');
+            mobileUsername.innerText = '@' + username;
+        }
+        
+        // Focus input
+        const isMobile = window.innerWidth <= 900;
+        if (isMobile) {
+            document.getElementById('mobileChatInput').focus();
+        } else {
+            document.getElementById('desktopChatInput').focus();
+        }
+    };
+
+    window.cancelReply = (platform) => {
+        replyingTo = null;
+        
+        document.getElementById('desktopReplyIndicator')?.classList.remove('active');
+        document.getElementById('mobileReplyIndicator')?.classList.remove('active');
+    };
+
+    window.toggleLikeMessage = (messageId, roomId) => {
+        const likeBtn = document.getElementById(`like-btn-${messageId}`);
+        const likeCountEl = document.getElementById(`like-count-${messageId}`);
+        
+        if (!likeBtn) return;
+        
+        const isCurrentlyLiked = likeBtn.classList.contains('liked');
+        
+        // Optimistic UI update
+        if (isCurrentlyLiked) {
+            likeBtn.classList.remove('liked');
+            likeBtn.querySelector('i').className = 'fa-regular fa-heart';
+            const currentCount = parseInt(likeCountEl.innerText) || 0;
+            likeCountEl.innerText = currentCount > 1 ? currentCount - 1 : '';
+        } else {
+            likeBtn.classList.add('liked');
+            likeBtn.querySelector('i').className = 'fa-solid fa-heart';
+            const currentCount = parseInt(likeCountEl.innerText) || 0;
+            likeCountEl.innerText = currentCount + 1;
+        }
+        
+        // Emit to server
+        socket.emit('toggle_like_message', {
+            messageId,
+            roomId,
+            userEmail: user.email
+        });
+    };
+
+    socket.on('message_liked', (data) => {
+        const likeBtn = document.getElementById(`like-btn-${data.messageId}`);
+        const likeCountEl = document.getElementById(`like-count-${data.messageId}`);
+        
+        if (likeBtn && likeCountEl) {
+            const isLiked = data.likes.includes(user.email);
+            
+            if (isLiked) {
+                likeBtn.classList.add('liked');
+                likeBtn.querySelector('i').className = 'fa-solid fa-heart';
+            } else {
+                likeBtn.classList.remove('liked');
+                likeBtn.querySelector('i').className = 'fa-regular fa-heart';
+            }
+            
+            likeCountEl.innerText = data.likes.length > 0 ? data.likes.length : '';
+        }
+    });
+
 
     socket.on('receive_message', (msg) => {
         console.log("[v0] Received message:", msg);
@@ -1124,14 +1377,27 @@
         const input = document.getElementById('desktopChatInput');
         if (input.value && currentRoomId) {
             console.log("[v0] Sending message with avatar:", userAvatarUrl);
-            socket.emit('send_message', {
+            
+            const messageData = {
                 roomId: currentRoomId,
                 username: user.pseudo || user.given_name || user.name,
                 userEmail: user.email,
                 text: input.value,
-                avatar: userAvatarUrl // Use the computed avatar URL
-            });
+                avatar: userAvatarUrl
+            };
+            
+            // Add reply data if replying
+            if (replyingTo) {
+                messageData.replyTo = replyingTo.messageId;
+                messageData.replyToUsername = replyingTo.username;
+                messageData.replyToText = replyingTo.text.substring(0, 50);
+            }
+            
+            socket.emit('send_message', messageData);
             input.value = '';
+            
+            // Clear reply state
+            cancelReply('desktop');
         }
     };
 
@@ -1139,23 +1405,29 @@
         const input = document.getElementById('mobileChatInput');
         if (input.value && currentRoomId) {
             console.log("[v0] Sending mobile message with avatar:", userAvatarUrl);
-            socket.emit('send_message', {
+            
+            const messageData = {
                 roomId: currentRoomId,
                 username: user.pseudo || user.given_name || user.name,
                 userEmail: user.email,
                 text: input.value,
-                avatar: userAvatarUrl // Use the computed avatar URL
-            });
+                avatar: userAvatarUrl
+            };
+            
+            // Add reply data if replying
+            if (replyingTo) {
+                messageData.replyTo = replyingTo.messageId;
+                messageData.replyToUsername = replyingTo.username;
+                messageData.replyToText = replyingTo.text.substring(0, 50);
+            }
+            
+            socket.emit('send_message', messageData);
             input.value = '';
+            
+            // Clear reply state
+            cancelReply('mobile');
         }
     };
-
-    document.getElementById('desktopChatInput').addEventListener('keypress', e => {
-        if (e.key === 'Enter') sendDesktopMessage();
-    });
-    document.getElementById('mobileChatInput').addEventListener('keypress', e => {
-        if (e.key === 'Enter') sendMobileMessage();
-    });
 
     window.deleteMsg = (messageId, roomId) => {
         if (confirm("Supprimer ce message ?")) {
@@ -1505,6 +1777,12 @@
     // INIT
     // ==========================================
     loadFeed();
+
+    // ==========================================
+    // Global variables for reply system
+    // ==========================================
+    let replyingTo = null; // { messageId, username, text }
+
 </script>
 </body>
 </html>
