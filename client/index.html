@@ -1064,95 +1064,352 @@
 </div>
 
 <script>
-        // 1. AUTHENTIFICATION
-        const rawUser = localStorage.getItem('user_profile');
-        if (!rawUser) window.location.href = 'login.html';
-        const user = JSON.parse(rawUser);
-        
-        document.getElementById('headName').innerText = user.given_name;
-        document.getElementById('headerAvatar').style.backgroundImage = `url('${user.picture || "https://cdn-icons-png.flaticon.com/512/847/847969.png"}')`;
+    // AUTH CHECK
+    const rawUser = localStorage.getItem('user_profile');
+    if (!rawUser) window.location.href = 'login.html';
+    const user = JSON.parse(rawUser);
+    
+    document.getElementById('headerName').innerText = user.given_name;
+    document.getElementById('headerAvatar').style.backgroundImage = `url('${user.picture || "https://cdn-icons-png.flaticon.com/512/847/847969.png"}')`;
 
-        // 2. INIT ELO (HEADER)
-        const eloSpan = document.getElementById('headerElo');
-        if(eloSpan) eloSpan.innerText = user.elo || 1000;
+    // SOCKET
+    const socket = io("https://debateroom-u1gz.onrender.com");
+    let currentRoomId = null;
+    let currentChatMessages = [];
+    const urlParams = new URLSearchParams(window.location.search);
+    const startRoom = urlParams.get('room');
 
-        // 3. CONNEXION SOCKET
-        const socket = io("https://debateroom-u1gz.onrender.com");
-        let currentRoomId = null;
-        let currentChatMessages = [];
-        const urlParams = new URLSearchParams(window.location.search);
-        const startRoom = urlParams.get('room');
+    // 1. INIT ELO
+        const currentElo = user.elo || 1000;
+        const eloBadge = document.getElementById('userElo');
+        if(eloBadge) eloBadge.innerText = currentElo;
 
-        // 4. PLAYER HTML
-        function getPlayerHTML(room) {
-            if (room.videoUrl.includes('youtube.com/embed')) {
-                return `<iframe src="${room.videoUrl}" style="width:100%; height:100%; border:none;" allow="autoplay; encrypted-media"></iframe>`;
-            } 
-            else if (room.videoUrl.includes('tiktok.com/embed')) {
-                return `<div style="width:100%; height:100%; background:#000; display:flex; align-items:center; justify-content:center;"><iframe src="${room.videoUrl}" style="width:100%; height:120%; border:none; transform:scale(1.1);"></iframe></div>`;
-            } 
-            else {
-                return `<video src="${room.videoUrl}" loop playsinline muted autoplay style="width:100%; height:100%; object-fit:cover;"></video>`;
+        // 2. ÉCOUTEUR MIS À JOUR ELO
+        socket.on('update_user_elo', (data) => {
+            console.log("📈 Nouveau score ELO :", data.elo);
+            
+            // Mise à jour visuelle
+            if(eloBadge) {
+                // Animation Flash
+                eloBadge.style.transform = "scale(1.5)";
+                eloBadge.style.transition = "0.3s";
+                eloBadge.innerText = data.elo;
+                
+                // Couleur selon gain/perte
+                if(data.elo > user.elo) eloBadge.style.background = "#2ecc71"; // Vert
+                else eloBadge.style.background = "#e74c3c"; // Rouge
+
+                setTimeout(() => {
+                    eloBadge.style.transform = "scale(1)";
+                    eloBadge.style.background = "var(--accent)"; // Retour au doré
+                }, 500);
+            }
+
+            // Sauvegarde locale
+            user.elo = data.elo;
+            localStorage.setItem('user_profile', JSON.stringify(user));
+        });
+
+    // VIDEO PLAYER HELPER
+    function getPlayerHTML(room) {
+        if (room.videoUrl.includes('youtube.com/embed')) {
+            return `<iframe src="${room.videoUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+        }
+        if (room.videoUrl.includes('tiktok.com/embed')) {
+            return `<iframe src="${room.videoUrl}" style="transform:scale(1.1);"></iframe>`;
+        }
+        return `<video src="${room.videoUrl}" loop playsinline muted autoplay></video>`;
+    }
+
+    
+
+    // LOAD FEED
+    async function loadFeed() {
+        try {
+            const res = await fetch('https://debateroom-u1gz.onrender.com/api/feed/foryou?email=' + user.email);
+            const rooms = await res.json();
+            const container = document.getElementById('feedScroll');
+            container.innerHTML = '';
+
+            rooms.forEach(room => {
+                const validCount = room.votes?.valid?.length || 0;
+                const intingCount = room.votes?.inting?.length || 0;
+
+                const slide = document.createElement('div');
+                slide.className = 'video-slide';
+                slide.dataset.slug = room.slug;
+                slide.id = `room-${room.slug}`;
+
+                slide.innerHTML = `
+                    <div class="video-container">${getPlayerHTML(room)}</div>
+                    
+                    <div class="video-info">
+                        <span class="video-game-tag">
+                            <i class="fa-solid fa-gamepad"></i> ${room.game}
+                        </span>
+                        <h2 class="video-title">${room.videoTitle}</h2>
+                    </div>
+
+                    <div class="side-actions">
+                        <div class="action-btn vote-valid" onclick="vote('${room.slug}', 'valid')">
+                            <div class="action-circle" id="valid-${room.slug}">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <span class="action-count" id="valid-count-${room.slug}">${validCount}</span>
+                        </div>
+                        <div class="action-btn vote-inting" onclick="vote('${room.slug}', 'inting')">
+                            <div class="action-circle" id="inting-${room.slug}">
+                                <i class="fa-solid fa-xmark"></i>
+                            </div>
+                            <span class="action-count" id="inting-count-${room.slug}">${intingCount}</span>
+                        </div>
+                        <div class="action-btn" onclick="openMobileChat('${room.slug}')">
+                            <div class="action-circle">
+                                <i class="fa-solid fa-comment-dots"></i>
+                            </div>
+                            <span class="action-count">Chat</span>
+                        </div>
+                        <div class="action-btn" onclick="shareRoom('${room.slug}')">
+                            <div class="action-circle">
+                                <i class="fa-solid fa-share"></i>
+                            </div>
+                            <span class="action-count">Partager</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(slide);
+            });
+
+            initIntersectionObserver();
+            if (startRoom) {
+                setTimeout(() => {
+                    document.getElementById(`room-${startRoom}`)?.scrollIntoView({ behavior: 'smooth' });
+                }, 500);
+            }
+        } catch (e) {
+            console.error('Feed load error:', e);
+        }
+    }
+
+    // INTERSECTION OBSERVER
+    function initIntersectionObserver() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const roomId = entry.target.dataset.slug;
+                const video = entry.target.querySelector('video');
+
+                if (entry.isIntersecting) {
+                    currentRoomId = roomId;
+                    socket.emit('join_room', roomId);
+                    if (video) video.play();
+                    updateDesktopChat(roomId);
+                } else {
+                    if (video) {
+                        video.pause();
+                        video.currentTime = 0;
+                    }
+                }
+            });
+        }, { threshold: 0.5 });
+
+        document.querySelectorAll('.video-slide').forEach(slide => observer.observe(slide));
+    }
+
+    // CHAT FUNCTIONS
+    function updateDesktopChat(roomId) {
+        const list = document.getElementById('desktopChatMessages');
+        list.innerHTML = '<div class="msg-system">Chargement...</div>';
+        list.dataset.room = roomId;
+    }
+
+    function addMessageToUI(container, msg, isOwner) {
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.id = `msg-${msg._id}`;
+
+        const canDelete = (msg.userEmail === user.email) || isOwner;
+        const deleteBtn = canDelete ? `<i class="fa-solid fa-trash msg-delete" onclick="deleteMessage('${msg._id}', '${msg.roomId}')"></i>` : '';
+
+        // LOGIQUE BADGES (Nouvelle version)
+        let badgesHTML = '';
+        if (msg.games && msg.games.length > 0 && msg.details) {
+            const mainGame = msg.games[0];
+            const mainRank = msg.details[mainGame]?.rank || 'Unranked';
+            
+            // Map des noms courts pour l'affichage
+            const gameNames = { 'lol': 'LoL', 'valorant': 'Valo', 'fortnite': 'Fort', 'rl': 'RL' };
+            const displayName = gameNames[mainGame] || mainGame;
+
+            let popupContent = '';
+            msg.games.forEach(g => {
+                const r = msg.details[g]?.rank || '-';
+                popupContent += `<div class="badge-row"><span>${gameNames[g] || g}</span><span class="rank">${r}</span></div>`;
+            });
+            
+            badgesHTML = `
+                <div class="msg-badges">
+                    <div class="badge-main">${displayName} • ${mainRank} ${msg.games.length > 1 ? '+' : ''}</div>
+                    <div class="badge-popup">${popupContent}</div>
+                </div>
+            `;
+        }
+
+        // Avatar par défaut si manquant
+        const avatarUrl = msg.avatar || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+
+        div.innerHTML = `
+            <div class="msg-header">
+                <div class="msg-avatar" style="background-image:url('${avatarUrl}')"></div>
+                <span class="msg-author">${msg.username}</span>
+                ${badgesHTML}
+                ${deleteBtn}
+            </div>
+            <div class="msg-text">${msg.text}</div>
+        `;
+        container.appendChild(div);
+    }
+
+    // SOCKET EVENTS
+    socket.on('init_room', (data) => {
+            if(data.roomId === currentRoomId) {
+                // 1. Chat & Messages
+                currentChatMessages = data.messages || [];
+                const isOwner = data.ownerEmail === user.email;
+                const dList = document.getElementById('deskChatList');
+                if(dList.dataset.room === data.roomId) {
+                    dList.innerHTML = '<div class="msg sys">Débat commencé</div>';
+                    currentChatMessages.forEach(m => addMessageToUI(dList, m, isOwner));
+                    dList.scrollTop = dList.scrollHeight;
+                }
+
+                // 2. LOGIQUE DE VOTE AVEUGLE
+                const validCount = document.getElementById(`valid-count-${data.roomId}`);
+                const intingCount = document.getElementById(`inting-count-${data.roomId}`);
+                const btnValid = document.getElementById(`valid-${data.roomId}`).parentElement; // Le parent .action-btn
+                const btnInting = document.getElementById(`inting-${data.roomId}`).parentElement;
+
+                // Mise à jour des chiffres
+                validCount.innerText = data.votes.valid;
+                intingCount.innerText = data.votes.inting;
+
+                // Si j'ai déjà voté (data.myVote n'est pas null)
+                if (data.myVote) {
+                    // On affiche les scores
+                    validCount.classList.remove('blind');
+                    intingCount.classList.remove('blind');
+                    
+                    // On bloque les boutons
+                    btnValid.classList.add('disabled');
+                    btnInting.classList.add('disabled');
+                    
+                    // On met en surbrillance mon choix
+                    if(data.myVote === 'valid') btnValid.classList.add('selected');
+                    else btnInting.classList.add('selected');
+                    
+                    // On allume la boule
+                    const circleId = data.myVote === 'valid' ? `valid-${data.roomId}` : `inting-${data.roomId}`;
+                    document.getElementById(circleId).classList.add('active');
+                } else {
+                    // Je n'ai pas voté : MODE AVEUGLE
+                    validCount.classList.add('blind');
+                    intingCount.classList.add('blind');
+                    
+                    // On active les boutons
+                    btnValid.classList.remove('disabled', 'selected');
+                    btnInting.classList.remove('disabled', 'selected');
+                    
+                    // On éteint les boules
+                    document.getElementById(`valid-${data.roomId}`).classList.remove('active');
+                    document.getElementById(`inting-${data.roomId}`).classList.remove('active');
+                }
+            }
+        });
+
+    socket.on('receive_message', (msg) => {
+        if (msg.roomId === currentRoomId) {
+            currentChatMessages.push(msg);
+
+            const dList = document.getElementById('desktopChatMessages');
+            if (dList.dataset.room === msg.roomId) {
+                addMessageToUI(dList, msg, false);
+                dList.scrollTop = dList.scrollHeight;
+            }
+
+            const mList = document.getElementById('mobileChatMessages');
+            if (document.getElementById('mobileChat').classList.contains('open')) {
+                addMessageToUI(mList, msg, false);
+                mList.scrollTop = mList.scrollHeight;
             }
         }
+    });
 
-        // 5. CHARGEMENT FEED
-        async function loadFeed() {
-            try {
-                const res = await fetch('https://debateroom-u1gz.onrender.com/api/feed/foryou?email=' + user.email);
-                const rooms = await res.json();
-                const container = document.getElementById('feedScroll'); // CORRIGÉ: C'était feedContainer ou feedScroll selon les versions
-                if(!container) return;
-                
-                container.innerHTML = '';
+    socket.on('message_deleted', (mid) => {
+        const el = document.getElementById(`msg-${mid}`);
+        if (el) el.remove();
+    });
 
-                rooms.forEach(room => {
-                    const v = room.votes?.valid?.length || 0;
-                    const i = room.votes?.inting?.length || 0;
+    socket.on('update_votes', (d) => {
+        document.getElementById(`valid-count-${d.roomId}`).innerText = d.valid;
+        document.getElementById(`inting-count-${d.roomId}`).innerText = d.inting;
+    });
 
-                    const slide = document.createElement('div');
-                    slide.className = 'video-slide'; // CORRIGÉ: classe CSS du nouveau design
-                    slide.dataset.slug = room.slug;
-                    slide.id = `room-${room.slug}`;
+    socket.on('room_created', () => window.location.reload());
 
-                    // NOTE : On utilise doVote() ici, et classe "blind" par défaut
-                    slide.innerHTML = `
-                        <div class="video-container">${getPlayerHTML(room)}</div>
-                        
-                        <div class="video-info">
-                            <span class="video-game-tag"><i class="fa-solid fa-gamepad"></i> ${room.game}</span>
-                            <h2 class="video-title">${room.videoTitle}</h2>
-                        </div>
+    // ELO UPDATE
+    socket.on('update_user_elo', (data) => {
+        console.log("📈 ELO Update:", data.elo);
+        const eloBadge = document.getElementById('headerElo');
+        
+        if(eloBadge) {
+            // Animation simple
+            eloBadge.style.transform = "scale(1.2)";
+            eloBadge.style.transition = "0.2s";
+            
+            // Couleur temporaire
+            if (data.elo > user.elo) eloBadge.style.color = "#00d26a"; // Vert
+            else eloBadge.style.color = "#ff4757"; // Rouge
+            
+            eloBadge.innerText = data.elo;
 
-                        <div class="side-actions">
-                            <div class="action-btn vote-valid" onclick="doVote('${room.slug}', 'valid')">
-                                <div class="action-circle" id="valid-${room.slug}"><i class="fa-solid fa-check"></i></div>
-                                <span class="action-count blind" id="valid-count-${room.slug}">${v}</span>
-                            </div>
-                            <div class="action-btn vote-inting" onclick="doVote('${room.slug}', 'inting')">
-                                <div class="action-circle" id="inting-${room.slug}"><i class="fa-solid fa-xmark"></i></div>
-                                <span class="action-count blind" id="inting-count-${room.slug}">${i}</span>
-                            </div>
-                            <div class="action-btn" onclick="openMobileChat('${room.slug}')">
-                                <div class="action-circle"><i class="fa-solid fa-comment-dots"></i></div>
-                                <span class="action-count">Chat</span>
-                            </div>
-                            <div class="action-btn" onclick="shareRoom('${room.slug}')">
-                                <div class="action-circle"><i class="fa-solid fa-share"></i></div>
-                                <span class="action-count">Partager</span>
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(slide);
-                });
-                
-                initIntersectionObserver();
-                if (startRoom) setTimeout(() => document.getElementById(`room-${startRoom}`)?.scrollIntoView(), 500);
-
-            } catch (e) { console.error("Erreur chargement feed:", e); }
+            setTimeout(() => {
+                eloBadge.style.transform = "scale(1)";
+                eloBadge.style.color = "#000"; // Retour couleur normale
+            }, 500);
         }
 
-        function initIntersectionObserver() {
+        // Sauvegarde locale
+        user.elo = data.elo;
+        localStorage.setItem('user_profile', JSON.stringify(user));
+    });
+
+    // SEND MESSAGES
+    function sendDesktopMessage() {
+        const input = document.getElementById('desktopChatInput');
+        if (input.value && currentRoomId) {
+            socket.emit('send_message', {
+                roomId: currentRoomId,
+                username: user.given_name,
+                userEmail: user.email,
+                text: input.value
+            });
+            input.value = '';
+        }
+    }
+
+    function sendMobileMessage() {
+        const input = document.getElementById('mobileChatInput');
+        if (input.value && currentRoomId) {
+            socket.emit('send_message', {
+                roomId: currentRoomId,
+                username: user.given_name,
+                userEmail: user.email,
+                text: input.value
+            });
+            input.value = '';
+        }
+    }
+
+    function initObserver() {
             const obs = new IntersectionObserver(entries => {
                 entries.forEach(e => {
                     const roomId = e.target.dataset.slug;
@@ -1162,216 +1419,175 @@
                         // IMPORTANT : On envoie l'email pour savoir si on a déjà voté
                         socket.emit('join_room', { roomId: roomId, userEmail: user.email });
                         if(video) video.play();
-                        updateDesktopChat(roomId);
+                        updateDeskChat(roomId);
                     } else {
                         if(video) { video.pause(); video.currentTime=0; }
                     }
                 });
             }, {threshold:0.5});
-            document.querySelectorAll('.video-slide').forEach(s => obs.observe(s));
+            document.querySelectorAll('.slide').forEach(s => obs.observe(s));
         }
 
-        // 6. UI CHAT
-        function updateDesktopChat(roomId) {
-            const list = document.getElementById('desktopChatMessages');
-            if(list) {
-                list.innerHTML = '<div class="msg-system">Chargement...</div>';
-                list.dataset.room = roomId;
-            }
+    document.getElementById('desktopChatInput').addEventListener('keypress', e => {
+        if (e.key === 'Enter') sendDesktopMessage();
+    });
+    document.getElementById('mobileChatInput').addEventListener('keypress', e => {
+        if (e.key === 'Enter') sendMobileMessage();
+    });
+
+    // DELETE MESSAGE
+    window.deleteMessage = (mid, rid) => {
+        if (confirm("Supprimer ce message ?")) {
+            socket.emit('delete_message', { messageId: mid, roomId: rid, userEmail: user.email });
         }
+    };
 
-        function addMessageToUI(container, msg, isOwner) {
-            if(!container) return;
-            
-            const div = document.createElement('div');
-            div.className = 'message'; // Classe CSS du nouveau design
-            div.id = `msg-${msg._id}`;
-            
-            // Badges
-            let badgesHTML = '';
-            if (msg.games && msg.games.length > 0 && msg.details) {
-                const main = msg.games[0];
-                const rank = msg.details[main]?.rank || '-';
-                let list = '';
-                msg.games.forEach(g => list += `<div class="badge-row"><span>${g}</span><span class="rank">${msg.details[g]?.rank}</span></div>`);
-                badgesHTML = `<div class="msg-badges"><div class="badge-main">${main} • ${rank}</div><div class="badge-popup">${list}</div></div>`;
-            }
+    // VOTING
+    window.doVote = (rid, c) => {
+            const btnValid = document.getElementById(`valid-${rid}`).parentElement;
+            const btnInting = document.getElementById(`inting-${rid}`).parentElement;
 
-            const canDel = (msg.userEmail === user.email) || isOwner;
-            const delBtn = canDel ? `<i class="fa-solid fa-trash msg-delete" onclick="deleteMessage('${msg._id}','${msg.roomId}')"></i>` : '';
+            // Si déjà désactivé, on ne fait rien (Anti-Spam)
+            if (btnValid.classList.contains('disabled')) return;
 
-            div.innerHTML = `
-                <div class="msg-header">
-                    <div class="msg-avatar" style="background-image:url('${msg.avatar}')"></div>
-                    <span class="msg-author">${msg.username}</span>
-                    ${badgesHTML}
-                    ${delBtn}
-                </div>
-                <div class="msg-text">${msg.text}</div>
-            `;
-            container.appendChild(div);
-        }
-
-        // 7. SOCKETS : UPDATE UI & ELO
-        socket.on('init_room', (data) => {
-            if(data.roomId === currentRoomId) {
-                // CHAT
-                currentChatMessages = data.messages || [];
-                const dList = document.getElementById('desktopChatMessages');
-                
-                // Vérification de sécurité (Correction du crash dataset null)
-                if(dList && dList.dataset.room === data.roomId) {
-                    dList.innerHTML = '<div class="msg-system">Débat commencé</div>';
-                    currentChatMessages.forEach(m => addMessageToUI(dList, m, data.ownerEmail === user.email));
-                    dList.scrollTop = dList.scrollHeight;
-                }
-
-                // VOTES : GESTION AVEUGLE (BLIND)
-                const vCount = document.getElementById(`valid-count-${data.roomId}`);
-                const iCount = document.getElementById(`inting-count-${data.roomId}`);
-                const vBtn = document.getElementById(`valid-${data.roomId}`)?.parentElement;
-                const iBtn = document.getElementById(`inting-${data.roomId}`)?.parentElement;
-
-                if(vCount && iCount) {
-                    vCount.innerText = data.votes.valid;
-                    iCount.innerText = data.votes.inting;
-
-                    if (data.myVote) {
-                        // DÉJÀ VOTÉ
-                        vCount.classList.remove('blind');
-                        iCount.classList.remove('blind');
-                        
-                        if(vBtn) vBtn.classList.add('disabled');
-                        if(iBtn) iBtn.classList.add('disabled');
-
-                        if(data.myVote === 'valid') {
-                            if(vBtn) vBtn.querySelector('.action-circle').classList.add('active'); 
-                        } else {
-                            if(iBtn) iBtn.querySelector('.action-circle').classList.add('active');
-                        }
-                    } else {
-                        // PAS ENCORE VOTÉ
-                        vCount.classList.add('blind');
-                        iCount.classList.add('blind');
-                        
-                        if(vBtn) vBtn.classList.remove('disabled');
-                        if(iBtn) iBtn.classList.remove('disabled');
-                        
-                        document.getElementById(`valid-${data.roomId}`)?.classList.remove('active');
-                        document.getElementById(`inting-${data.roomId}`)?.classList.remove('active');
-                    }
-                }
-            }
-        });
-
-        socket.on('receive_message', (msg) => {
-            if(msg.roomId === currentRoomId) {
-                currentChatMessages.push(msg);
-                const dList = document.getElementById('desktopChatMessages');
-                if(dList && dList.dataset.room === msg.roomId) { addMessageToUI(dList, msg, false); dList.scrollTop = dList.scrollHeight; }
-                
-                const mList = document.getElementById('mobileChatMessages');
-                if(mList && document.getElementById('mobileChat').classList.contains('open')) { 
-                    addMessageToUI(mList, msg, false); mList.scrollTop = mList.scrollHeight; 
-                }
-            }
-        });
-
-        // ACTION DE VOTE (C'est ici la correction principale : doVote au lieu de vote)
-        window.doVote = (rid, c) => {
-            const vBtnContainer = document.getElementById(`valid-${rid}`).parentElement;
-            const iBtnContainer = document.getElementById(`inting-${rid}`).parentElement;
-
-            // Si déjà désactivé, on ne fait rien
-            if (vBtnContainer.classList.contains('disabled')) return;
-
-            // 1. On révèle les scores
+            // 1. UI INSTANTANÉE
+            // On floute plus, on affiche
             document.getElementById(`valid-count-${rid}`).classList.remove('blind');
             document.getElementById(`inting-count-${rid}`).classList.remove('blind');
 
-            // 2. On bloque les clics futurs
-            vBtnContainer.classList.add('disabled');
-            iBtnContainer.classList.add('disabled');
-            
-            // 3. Style actif
-            if(c === 'valid') {
-                document.getElementById(`valid-${rid}`).classList.add('active');
-            } else {
-                document.getElementById(`inting-${rid}`).classList.add('active');
-            }
+            // On bloque tout
+            btnValid.classList.add('disabled');
+            btnInting.classList.add('disabled');
 
-            // 4. Envoi au serveur
+            // On sélectionne le choix
+            const selectedBtn = c === 'valid' ? btnValid : btnInting;
+            selectedBtn.classList.add('selected');
+            document.getElementById(`${c}-${rid}`).classList.add('active');
+
+            // 2. ENVOI SERVEUR
             socket.emit('send_vote', { roomId:rid, choice:c, userId:user.email });
         };
 
-        // ELO UPDATE
-        socket.on('update_user_elo', (data) => {
-            console.log("📈 ELO Update:", data.elo);
-            const badge = document.getElementById('headerElo');
-            if(badge) {
-                badge.style.transform = "scale(1.3)";
-                badge.innerText = data.elo;
-                badge.style.backgroundColor = (data.elo > user.elo) ? "#00d26a" : "#ff4757";
-                badge.style.color = (data.elo > user.elo) ? "#000" : "#fff";
-                setTimeout(() => {
-                    badge.style.transform = "scale(1)";
-                    badge.style.backgroundColor = "var(--accent)";
-                    badge.style.color = "#000";
-                }, 1000);
-            }
-            user.elo = data.elo;
-            localStorage.setItem('user_profile', JSON.stringify(user));
-        });
+    // SHARE
+    window.shareCurrentRoom = () => { if (currentRoomId) shareRoom(currentRoomId); };
+    window.shareRoom = (slug) => {
+        const url = `${window.location.origin}${window.location.pathname}?room=${slug}`;
+        navigator.clipboard.writeText(url).then(() => alert("Lien copie !"));
+    };
 
-        socket.on('update_votes', (d) => {
-            const vCount = document.getElementById(`valid-count-${d.roomId}`);
-            const iCount = document.getElementById(`inting-count-${d.roomId}`);
-            if(vCount && iCount) {
-                vCount.innerText = d.valid;
-                iCount.innerText = d.inting;
-            }
-        });
+    // MOBILE CHAT
+    window.openMobileChat = (roomId) => {
+        currentRoomId = roomId;
+        document.getElementById('mobileChat').classList.add('open');
+        document.getElementById('mobileChatOverlay').classList.add('open');
+        const list = document.getElementById('mobileChatMessages');
+        list.innerHTML = '';
+        currentChatMessages.forEach(msg => addMessageToUI(list, msg, false));
+        list.scrollTop = list.scrollHeight;
+    };
 
-        // --- ENVOI MESSAGES ---
-        window.sendDesktopMessage = () => sendUnifiedMsg('desktopChatInput');
-        window.sendMobileMessage = () => sendUnifiedMsg('mobileChatInput');
-        
-        function sendUnifiedMsg(id) {
-            const inp = document.getElementById(id);
-            if(inp.value && currentRoomId) {
-                socket.emit('send_message', { 
-                    roomId: currentRoomId, 
-                    username: user.given_name, 
-                    userEmail: user.email, 
-                    text: inp.value 
-                });
-                inp.value = '';
-            }
+    window.closeMobileChat = () => {
+        document.getElementById('mobileChat').classList.remove('open');
+        document.getElementById('mobileChatOverlay').classList.remove('open');
+    };
+
+    // DESKTOP CHAT TOGGLE
+    window.toggleDesktopChat = () => {
+        const layout = document.getElementById('appLayout');
+        const btn = document.getElementById('chatToggleBtn');
+        layout.classList.toggle('chat-collapsed');
+        btn.classList.toggle('active');
+    };
+
+    // USER MENU
+    window.toggleUserMenu = () => {
+        document.getElementById('userDropdown').classList.toggle('open');
+    };
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.user-menu')) {
+            document.getElementById('userDropdown').classList.remove('open');
         }
+    });
 
-        // --- UPLOAD & UI ---
-        let uploadMode='link';
-        window.switchUploadTab=(m)=>{uploadMode=m;document.getElementById('linkInputGroup').style.display=m==='link'?'block':'none';document.getElementById('fileInputGroup').style.display=m==='file'?'block':'none';document.getElementById('tabLinkBtn').classList.toggle('active',m==='link');document.getElementById('tabFileBtn').classList.toggle('active',m==='file');};
-        window.handleFileSelect=()=>{const f=document.getElementById('videoFileInput').files[0];if(f)document.getElementById('uploadFileName').innerText=f.name;};
-        
-        window.createRoom=async()=>{
-            const game=document.getElementById('newGameSelect').value;const btn=document.getElementById('publishBtn');btn.innerHTML='Traitement...';btn.disabled=true;
-            try{let finalSrc="";if(uploadMode==='link'){const url=document.getElementById('newLinkInput').value;if(!url)throw new Error("Lien requis");const res=await fetch(`https://debateroom-u1gz.onrender.com/api/video/resolve?url=${encodeURIComponent(url)}`);const data=await res.json();if(data.error)throw new Error(data.error);finalSrc=data.src;}else{const f=document.getElementById('videoFileInput').files[0];if(!f)throw new Error("Fichier requis");const fd=new FormData();fd.append('videoFile',f);const res=await fetch('https://debateroom-u1gz.onrender.com/api/video/upload',{method:'POST',body:fd});const data=await res.json();if(data.error)throw new Error(data.error);finalSrc=data.src;}socket.emit('create_room',{src:finalSrc,title:uploadMode==='link'?"Lien":"Upload",game,platform:"Web",userEmail:user.email});closeCreateModal();}catch(e){alert(e.message);btn.innerHTML='PUBLIER';btn.disabled=false;}
-        };
-        socket.on('room_created',()=>window.location.reload());
+    window.logout = () => {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    };
 
-        // UI HELPERS
-        window.toggleUserMenu = () => document.getElementById('userDropdown').classList.toggle('open');
-        window.toggleDesktopChat = () => { document.getElementById('appLayout').classList.toggle('chat-collapsed'); document.getElementById('chatToggleBtn').classList.toggle('active'); };
-        window.openCreateModal = () => document.getElementById('createModal').classList.add('open');
-        window.closeCreateModal = () => document.getElementById('createModal').classList.remove('open');
-        window.openMobileChat = (rid) => { currentRoomId=rid; document.getElementById('mobileChat').classList.add('open'); document.getElementById('mobileChatOverlay').classList.add('open'); };
-        window.closeMobileChat = () => { document.getElementById('mobileChat').classList.remove('open'); document.getElementById('mobileChatOverlay').classList.remove('open'); };
-        window.shareRoom = (s) => { navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?room=${s}`).then(()=>alert("Lien copié !")); };
-        window.logout = () => { localStorage.clear(); window.location.href='login.html'; };
+    // CREATE MODAL
+    let uploadMode = 'link';
 
-        loadFeed();
-    </script>
+    window.openCreateModal = () => {
+        document.getElementById('createModal').classList.add('open');
+    };
+
+    window.closeCreateModal = () => {
+        document.getElementById('createModal').classList.remove('open');
+    };
+
+    window.switchUploadTab = (mode) => {
+        uploadMode = mode;
+        document.getElementById('linkInputGroup').style.display = mode === 'link' ? 'block' : 'none';
+        document.getElementById('fileInputGroup').style.display = mode === 'file' ? 'block' : 'none';
+        document.getElementById('tabLinkBtn').classList.toggle('active', mode === 'link');
+        document.getElementById('tabFileBtn').classList.toggle('active', mode === 'file');
+    };
+
+    window.handleFileSelect = () => {
+        const file = document.getElementById('videoFileInput').files[0];
+        const uploadFileName = document.getElementById('uploadFileName');
+        if (file) {
+            uploadFileName.innerText = file.name;
+            uploadFileName.classList.add('file-selected');
+        } else {
+            uploadFileName.innerText = 'Choisir une video';
+            uploadFileName.classList.remove('file-selected');
+        }
+    };
+
+    window.createRoom = async () => {
+        const game = document.getElementById('newGameSelect').value;
+        const btn = document.getElementById('publishBtn');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Traitement...';
+        btn.disabled = true;
+
+        try {
+            let finalSrc = "";
+            if (uploadMode === 'link') {
+                const url = document.getElementById('newLinkInput').value;
+                const res = await fetch(`https://debateroom-u1gz.onrender.com/api/video/resolve?url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                finalSrc = data.src;
+            } else {
+                const file = document.getElementById('videoFileInput').files[0];
+                const fd = new FormData();
+                fd.append('videoFile', file);
+                const res = await fetch('https://debateroom-u1gz.onrender.com/api/video/upload', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                finalSrc = data.src;
+            }
+
+            socket.emit('create_room', {
+                src: finalSrc,
+                title: uploadMode === 'link' ? "Lien" : "Upload",
+                game,
+                platform: "Web",
+                userEmail: user.email
+            });
+            closeCreateModal();
+        } catch (e) {
+            alert(e.message);
+            btn.innerHTML = '<i class="fa-solid fa-rocket"></i> PUBLIER';
+            btn.disabled = false;
+        }
+    };
+
+    // INIT
+    loadFeed();
+</script>
 
 </body>
 </html>
