@@ -841,39 +841,6 @@
         }
         .btn-ghost:hover { color: var(--text); }
 
-        /* ELO TOOLTIP (EXPLICATION SCORE) */
-        .elo-wrapper { position: relative; display: inline-block; cursor: help; }
-        .elo-tooltip {
-            visibility: hidden; width: 220px; background-color: #222; color: #fff;
-            text-align: center; border-radius: 8px; padding: 12px; border: 1px solid var(--accent);
-            position: absolute; z-index: 300; top: 140%; left: 50%; transform: translateX(-50%);
-            opacity: 0; transition: opacity 0.3s; font-size: 0.75rem; font-weight: normal; line-height: 1.4;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); pointer-events: none;
-        }
-        .elo-wrapper:hover .elo-tooltip { visibility: visible; opacity: 1; }
-        .elo-gain { color: #2ecc71; font-weight: bold; }
-        .elo-loss { color: #e74c3c; font-weight: bold; }
-
-        /* VOTE BLIND & LOCKED (Masquer score) */
-        .action-count.blind { 
-            filter: blur(6px); 
-            opacity: 0.7; 
-            user-select: none; 
-        }
-        
-        /* Boutons désactivés après vote */
-        .action-btn.disabled { 
-            opacity: 0.5; 
-            pointer-events: none; 
-            filter: grayscale(0.8);
-        }
-        /* Mais on garde le bouton choisi en couleur */
-        .action-btn.disabled.selected {
-            opacity: 1;
-            filter: none;
-            transform: scale(1.1);
-        }
-
         /* RESPONSIVE MOBILE */
         @media (max-width: 900px) {
             .app-layout {
@@ -923,15 +890,7 @@
             </button>
             <div class="user-menu">
                 <div class="user-trigger" onclick="toggleUserMenu()">
-    <div class="elo-wrapper">
-        <span id="headerElo" style="background:var(--accent); color:#000; padding:2px 8px; border-radius:6px; font-size:0.8rem; font-weight:700; margin-right:8px;">1000</span>
-        <div class="elo-tooltip">
-            <strong>Score de Juge</strong><br>
-            Prouve ton expertise !<br>
-            <span class="elo-gain">+10 pts</span> si tu votes avec la majorité<br>
-            <span class="elo-loss">-5 pts</span> si tu votes mal
-        </div>
-    </div>
+    <span id="headerElo" style="background:var(--accent); color:#000; padding:2px 8px; border-radius:6px; font-size:0.8rem; font-weight:700; margin-right:8px;">1000</span>
     
     <div class="user-avatar" id="headerAvatar"></div>
     <span class="user-name" id="headerName">...</span>
@@ -1271,59 +1230,21 @@
 
     // SOCKET EVENTS
     socket.on('init_room', (data) => {
-            if(data.roomId === currentRoomId) {
-                // 1. Chat & Messages
-                currentChatMessages = data.messages || [];
-                const isOwner = data.ownerEmail === user.email;
-                const dList = document.getElementById('deskChatList');
-                if(dList.dataset.room === data.roomId) {
-                    dList.innerHTML = '<div class="msg sys">Débat commencé</div>';
-                    currentChatMessages.forEach(m => addMessageToUI(dList, m, isOwner));
-                    dList.scrollTop = dList.scrollHeight;
-                }
+        if (data.roomId === currentRoomId) {
+            currentChatMessages = data.messages || [];
+            const isOwner = data.ownerEmail === user.email;
+            const dList = document.getElementById('desktopChatMessages');
 
-                // 2. LOGIQUE DE VOTE AVEUGLE
-                const validCount = document.getElementById(`valid-count-${data.roomId}`);
-                const intingCount = document.getElementById(`inting-count-${data.roomId}`);
-                const btnValid = document.getElementById(`valid-${data.roomId}`).parentElement; // Le parent .action-btn
-                const btnInting = document.getElementById(`inting-${data.roomId}`).parentElement;
-
-                // Mise à jour des chiffres
-                validCount.innerText = data.votes.valid;
-                intingCount.innerText = data.votes.inting;
-
-                // Si j'ai déjà voté (data.myVote n'est pas null)
-                if (data.myVote) {
-                    // On affiche les scores
-                    validCount.classList.remove('blind');
-                    intingCount.classList.remove('blind');
-                    
-                    // On bloque les boutons
-                    btnValid.classList.add('disabled');
-                    btnInting.classList.add('disabled');
-                    
-                    // On met en surbrillance mon choix
-                    if(data.myVote === 'valid') btnValid.classList.add('selected');
-                    else btnInting.classList.add('selected');
-                    
-                    // On allume la boule
-                    const circleId = data.myVote === 'valid' ? `valid-${data.roomId}` : `inting-${data.roomId}`;
-                    document.getElementById(circleId).classList.add('active');
-                } else {
-                    // Je n'ai pas voté : MODE AVEUGLE
-                    validCount.classList.add('blind');
-                    intingCount.classList.add('blind');
-                    
-                    // On active les boutons
-                    btnValid.classList.remove('disabled', 'selected');
-                    btnInting.classList.remove('disabled', 'selected');
-                    
-                    // On éteint les boules
-                    document.getElementById(`valid-${data.roomId}`).classList.remove('active');
-                    document.getElementById(`inting-${data.roomId}`).classList.remove('active');
-                }
+            if (dList.dataset.room === data.roomId) {
+                dList.innerHTML = '<div class="msg-system">Debat en cours</div>';
+                currentChatMessages.forEach(m => addMessageToUI(dList, m, isOwner));
+                dList.scrollTop = dList.scrollHeight;
             }
-        });
+
+            document.getElementById(`valid-count-${data.roomId}`).innerText = data.votes.valid;
+            document.getElementById(`inting-count-${data.roomId}`).innerText = data.votes.inting;
+        }
+    });
 
     socket.on('receive_message', (msg) => {
         if (msg.roomId === currentRoomId) {
@@ -1409,25 +1330,6 @@
         }
     }
 
-    function initObserver() {
-            const obs = new IntersectionObserver(entries => {
-                entries.forEach(e => {
-                    const roomId = e.target.dataset.slug;
-                    const video = e.target.querySelector('video');
-                    if(e.isIntersecting) {
-                        currentRoomId = roomId;
-                        // IMPORTANT : On envoie l'email pour savoir si on a déjà voté
-                        socket.emit('join_room', { roomId: roomId, userEmail: user.email });
-                        if(video) video.play();
-                        updateDeskChat(roomId);
-                    } else {
-                        if(video) { video.pause(); video.currentTime=0; }
-                    }
-                });
-            }, {threshold:0.5});
-            document.querySelectorAll('.slide').forEach(s => obs.observe(s));
-        }
-
     document.getElementById('desktopChatInput').addEventListener('keypress', e => {
         if (e.key === 'Enter') sendDesktopMessage();
     });
@@ -1443,30 +1345,12 @@
     };
 
     // VOTING
-    window.doVote = (rid, c) => {
-            const btnValid = document.getElementById(`valid-${rid}`).parentElement;
-            const btnInting = document.getElementById(`inting-${rid}`).parentElement;
-
-            // Si déjà désactivé, on ne fait rien (Anti-Spam)
-            if (btnValid.classList.contains('disabled')) return;
-
-            // 1. UI INSTANTANÉE
-            // On floute plus, on affiche
-            document.getElementById(`valid-count-${rid}`).classList.remove('blind');
-            document.getElementById(`inting-count-${rid}`).classList.remove('blind');
-
-            // On bloque tout
-            btnValid.classList.add('disabled');
-            btnInting.classList.add('disabled');
-
-            // On sélectionne le choix
-            const selectedBtn = c === 'valid' ? btnValid : btnInting;
-            selectedBtn.classList.add('selected');
-            document.getElementById(`${c}-${rid}`).classList.add('active');
-
-            // 2. ENVOI SERVEUR
-            socket.emit('send_vote', { roomId:rid, choice:c, userId:user.email });
-        };
+    window.vote = (roomId, choice) => {
+        document.getElementById(`valid-${roomId}`).classList.remove('active');
+        document.getElementById(`inting-${roomId}`).classList.remove('active');
+        document.getElementById(`${choice}-${roomId}`).classList.add('active');
+        socket.emit('send_vote', { roomId, choice, userId: user.email });
+    };
 
     // SHARE
     window.shareCurrentRoom = () => { if (currentRoomId) shareRoom(currentRoomId); };
