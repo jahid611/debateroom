@@ -234,17 +234,49 @@
         };
         window.checkKey = (e, rid) => { if(e.key==='Enter') sendMsg(rid); };
 
+        // --- MODIFICATION DANS LA SECTION 5 DU SCRIPT ---
+
         window.createRoom = async () => {
             const url = document.getElementById('newLink').value;
             const game = document.getElementById('newGame').value;
+            
             if(!url) return alert('Lien requis');
+            
+            // Petit loader visuel sur le bouton
+            const btn = document.querySelector('.btn-pub');
+            const originalText = btn.innerText;
+            btn.innerText = "Chargement...";
+            btn.disabled = true;
+
             try {
+                // 1. On vérifie le lien via le backend
                 const res = await fetch(`https://debateroom-u1gz.onrender.com/api/video/resolve?url=${encodeURIComponent(url)}`);
                 const data = await res.json();
-                socket.emit('create_room', { src:data.src, title:"Débat User", game, platform:"Import" });
-                closeModal();
-            } catch(e) { alert('Erreur lien'); }
+                
+                if(data.error) throw new Error(data.error);
+
+                // 2. On envoie l'ordre de création
+                socket.emit('create_room', { 
+                    src: data.src, 
+                    title: "Nouveau Débat TikTok", 
+                    game: game, 
+                    platform: "Import" 
+                });
+                
+                // Le socket va répondre "room_created", ce qui déclenchera le reload ci-dessous
+                
+            } catch(e) { 
+                alert('Erreur : ' + e.message); 
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         };
+
+        // C'EST ICI QUE LE REFRESH SE FAIT
+        socket.on('room_created', () => {
+            console.log("✅ Débat créé ! Actualisation...");
+            window.location.reload(); // <--- LA COMMANDE MAGIQUE
+        });
 
         window.toggleMenu = () => document.getElementById('menu').classList.toggle('show');
         window.logout = () => { localStorage.clear(); window.location.href='login.html'; };
