@@ -242,8 +242,25 @@
         .modal-overlay.open .modal-content { transform:scale(1); }
         .btn-primary { width:100%; padding:16px; background:var(--accent); border:none; border-radius:12px; font-weight:700; cursor:pointer; margin-top:10px; color:#000; }
         .btn-primary:hover { box-shadow:0 4px 20px var(--accent-glow); }
-        .upload-zone { border:2px dashed var(--border); padding:30px; text-align:center; cursor:pointer; border-radius:16px; margin-top:10px; transition:0.2s; }
+        
+        /* Upload Zone Fix */
+        .upload-zone { 
+            border:2px dashed var(--border); 
+            border-radius:12px; 
+            padding:40px 20px; 
+            text-align:center; 
+            cursor:pointer; 
+            transition:0.2s; 
+            margin-bottom:16px;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            gap:12px;
+        }
         .upload-zone:hover { border-color:var(--accent); background:rgba(212,175,55,0.05); }
+        .upload-zone i { font-size:2rem; color:var(--accent); }
+        .upload-zone span { color:var(--text-secondary); font-size:0.9rem; }
         .dropdown-divider { height:1px; background:var(--border); margin:4px 0; }
     </style>
 </head>
@@ -308,8 +325,9 @@
         <div class="chat-messages" id="desktopChatMessages">
             <div class="msg-system">Selectionnez un debat</div>
         </div>
-        <div class="reply-indicator" id="desktopReplyIndicator">
-            <div class="reply-indicator-text">Repondre a <span id="desktopReplyUsername"></span></div>
+        <!-- Desktop Chat Input with Reply Indicator -->
+        <div id="desktopReplyIndicator" class="reply-indicator">
+            <div class="reply-indicator-text">Repondre a <span></span></div>
             <button class="reply-indicator-close" onclick="cancelReply('desktop')"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="chat-input-area">
@@ -343,8 +361,9 @@
         </button>
     </div>
     <div class="chat-messages" id="mobileChatMessages"></div>
-    <div class="reply-indicator" id="mobileReplyIndicator">
-        <div class="reply-indicator-text">Repondre a <span id="mobileReplyUsername"></span></div>
+    <!-- Mobile Chat Input with Reply Indicator -->
+    <div id="mobileReplyIndicator" class="reply-indicator">
+        <div class="reply-indicator-text">Repondre a <span></span></div>
         <button class="reply-indicator-close" onclick="cancelReply('mobile')"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="chat-input-area">
@@ -372,12 +391,13 @@
         <div id="linkInputGroup">
             <input type="text" class="chat-input" id="newLinkInput" placeholder="Lien YouTube, TikTok..." style="width:100%;">
         </div>
+        <!-- File upload zone - Fixed layout structure -->
         <div id="fileInputGroup" style="display:none;">
-            <label class="upload-zone">
-                <i class="fa-solid fa-cloud-arrow-up" style="font-size:2rem; color:var(--accent);"></i><br><br>
-                <span id="uploadFileName" style="color:var(--text-secondary);">Choisir une video</span>
-                <input type="file" id="videoFileInput" accept="video/*" style="display:none;" onchange="handleFileSelect()">
+            <label class="upload-zone" for="videoFileInput">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <span id="uploadFileName">Choisir une video</span>
             </label>
+            <input type="file" id="videoFileInput" accept="video/*" style="display:none;" onchange="handleFileSelect()">
         </div>
         <div style="margin-top:15px;">
             <label style="display:block; margin-bottom:8px; color:var(--text-secondary); font-size:0.85rem;">Titre</label>
@@ -762,7 +782,7 @@
                     if (!viewedRooms.includes(roomId)) {
                         viewedRooms.push(roomId);
                         if (viewedRooms.length > 100) viewedRooms = viewedRooms.slice(-100);
-                        localStorage.setItem('viewedRooms', JSON.stringify(viewedRooms));
+                        localStorage.setItem('viewedRooms', JSON.JSON.stringify(viewedRooms));
                     }
                     
                     const video = entry.target.querySelector('video');
@@ -1219,9 +1239,12 @@
         let isDragging = false;
 
         mobileChat.addEventListener('touchstart', (e) => {
-            if (chatMessages.scrollTop <= 0 || e.target.closest('.mobile-chat-drag-handle') || e.target.closest('.mobile-chat-header')) {
+            if (e.target.closest('.mobile-chat-drag-handle') || e.target.closest('.mobile-chat-header')) { // Allow dragging from handle or header
                 startY = e.touches[0].clientY;
                 isDragging = true;
+            } else if (chatMessages.scrollTop <= 0) { // Only allow dragging if scrolled to top
+                 startY = e.touches[0].clientY;
+                 isDragging = true;
             }
         }, { passive: true });
 
@@ -1229,7 +1252,7 @@
             if (!isDragging) return;
             currentY = e.touches[0].clientY;
             const diff = currentY - startY;
-            if (diff > 0 && chatMessages.scrollTop <= 0) {
+            if (diff > 0 && chatMessages.scrollTop <= 0) { // Only apply transform if scrolling down and at the top
                 mobileChat.style.transform = `translateY(${diff}px)`;
             }
         }, { passive: true });
@@ -1239,7 +1262,7 @@
             isDragging = false;
             const diff = currentY - startY;
             if (diff > 100) closeMobileChat();
-            mobileChat.style.transform = '';
+            mobileChat.style.transform = ''; // Reset transform
         });
     })();
 
@@ -1437,6 +1460,154 @@
             document.getElementById('userDropdown')?.classList.remove('open');
         }
     });
+
+    // ==========================================
+    // ADDING MISSING GLOBAL FUNCTIONS FOR REPLIES AND LIKES
+    // ==========================================
+    window.startReply = (messageId, username, text) => {
+        replyingTo = { messageId, username, text };
+        
+        // Desktop
+        const deskIndicator = document.getElementById('desktopReplyIndicator');
+        if (deskIndicator) {
+            deskIndicator.classList.add('active');
+            deskIndicator.querySelector('.reply-indicator-text').innerHTML = `Repondre a <span>@${username}</span>`;
+        }
+        
+        // Mobile
+        const mobileIndicator = document.getElementById('mobileReplyIndicator');
+        if (mobileIndicator) {
+            mobileIndicator.classList.add('active');
+            mobileIndicator.querySelector('.reply-indicator-text').innerHTML = `Repondre a <span>@${username}</span>`;
+        }
+        
+        // Focus on input
+        document.getElementById('desktopChatInput')?.focus();
+        document.getElementById('mobileChatInput')?.focus();
+    };
+    
+    window.cancelReply = () => {
+        replyingTo = null;
+        document.getElementById('desktopReplyIndicator')?.classList.remove('active');
+        document.getElementById('mobileReplyIndicator')?.classList.remove('active');
+    };
+    
+    window.toggleLikeMessage = (messageId, roomId) => {
+        socket.emit('toggle_like_message', { messageId, roomId, userEmail: user.email });
+        
+        // Optimistic UI update
+        const btn = document.getElementById(`like-btn-${messageId}`);
+        const countEl = document.getElementById(`like-count-${messageId}`);
+        
+        if (btn && countEl) {
+            const isLiked = btn.classList.contains('liked');
+            let count = parseInt(countEl.innerText) || 0;
+            
+            if (isLiked) {
+                btn.classList.remove('liked');
+                btn.querySelector('i').className = 'fa-regular fa-heart';
+                count = Math.max(0, count - 1);
+            } else {
+                btn.classList.add('liked');
+                btn.querySelector('i').className = 'fa-solid fa-heart';
+                count++;
+            }
+            
+            countEl.innerText = count > 0 ? count : '';
+        }
+    };
+    
+    window.toggleReplies = (toggle) => {
+        toggle.classList.toggle('expanded');
+        const container = toggle.nextElementSibling;
+        if (container) container.classList.toggle('expanded');
+    };
+    
+    window.scrollToMessage = (messageId) => {
+        const msgEl = document.getElementById(`msg-${messageId}`);
+        if (msgEl) {
+            msgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            msgEl.style.background = 'rgba(212,175,55,0.2)';
+            setTimeout(() => { msgEl.style.background = ''; }, 1500);
+        }
+    };
+    
+    window.deleteMsg = (msgId, roomId) => {
+        if (confirm('Supprimer ce message ?')) {
+            socket.emit('delete_message', { messageId: msgId, roomId });
+            document.getElementById(`msg-${msgId}`)?.remove();
+        }
+    };
+    
+    // Socket listener for like updates
+    socket.on('message_liked', (data) => {
+        const btn = document.getElementById(`like-btn-${data.messageId}`);
+        const countEl = document.getElementById(`like-count-${data.messageId}`);
+        
+        if (btn && countEl) {
+            const isLiked = data.likes.includes(user.email);
+            btn.className = `msg-action-btn ${isLiked ? 'liked' : ''}`;
+            btn.querySelector('i').className = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+            countEl.innerText = data.likes.length > 0 ? data.likes.length : '';
+        }
+    });
+
+    // ==========================================
+    // SEND MESSAGE (updated for replies)
+    // ==========================================
+    window.sendDesktopMessage = () => {
+        const input = document.getElementById('desktopChatInput');
+        const text = input.value.trim();
+        if (!text || !currentRoomId) return;
+        
+        const msgData = {
+            roomId: currentRoomId,
+            username: user.pseudo || user.given_name || user.name,
+            userEmail: user.email,
+            avatar: user.avatar || user.picture,
+            text,
+            games: user.games || [],
+            details: user.details || {}
+        };
+        
+        // Add reply info if replying
+        if (replyingTo) {
+            msgData.replyTo = replyingTo.messageId;
+            msgData.replyToUsername = replyingTo.username;
+            msgData.replyToText = replyingTo.text;
+        }
+        
+        socket.emit('send_message', msgData);
+        input.value = '';
+        cancelReply();
+    };
+    
+    window.sendMobileMessage = () => {
+        const input = document.getElementById('mobileChatInput');
+        const text = input.value.trim();
+        if (!text || !currentRoomId) return;
+        
+        const msgData = {
+            roomId: currentRoomId,
+            username: user.pseudo || user.given_name || user.name,
+            userEmail: user.email,
+            avatar: user.avatar || user.picture,
+            text,
+            games: user.games || [],
+            details: user.details || {}
+        };
+        
+        // Add reply info if replying
+        if (replyingTo) {
+            msgData.replyTo = replyingTo.messageId;
+            msgData.replyToUsername = replyingTo.username;
+            msgData.replyToText = replyingTo.text;
+        }
+        
+        socket.emit('send_message', msgData);
+        input.value = '';
+        cancelReply();
+    };
 
     // INIT
     loadFeed();
