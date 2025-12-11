@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DebateRoom | Pour Toi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Oswald:wght@500&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #050505;
+            --card: #121212;
+            --accent: #D4AF37;
+            --text: #FFF;
+            --text-dim: #888;
+        }
+        
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter', sans-serif; }
+        
+        body {
+            background: var(--bg); color: var(--text);
+            padding-bottom: 80px; /* Espace pour la bottom bar mobile */
+        }
+
+        /* HEADER */
+        header {
+            padding: 20px 30px; display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; background: rgba(5,5,5,0.9); z-index: 100; backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .logo { font-family: 'Oswald'; font-size: 1.5rem; letter-spacing: -1px; }
+        .logo span { color: var(--accent); }
+        
+        .user-pill { 
+            background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 30px; 
+            display: flex; align-items: center; gap: 10px; font-size: 0.9rem;
+        }
+        .avatar { width: 24px; height: 24px; border-radius: 50%; background: #333; background-size: cover; }
+
+        /* TITLE */
+        .page-title { padding: 40px 30px 20px; font-family: 'Oswald'; font-size: 2rem; text-transform: uppercase; }
+        .page-title span { color: var(--accent); }
+
+        /* FEED GRID */
+        .feed-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px; padding: 0 30px;
+        }
+
+        .debate-card {
+            background: var(--card); border-radius: 16px; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05); cursor: pointer;
+            transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+        }
+        
+        .debate-card:hover { transform: translateY(-8px); border-color: rgba(212, 175, 55, 0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+        .card-thumb {
+            width: 100%; aspect-ratio: 16/9; background: #000; position: relative;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .card-thumb video { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; transition: 0.3s; }
+        .debate-card:hover video { opacity: 1; }
+        
+        .play-icon {
+            position: absolute; font-size: 3rem; color: rgba(255,255,255,0.8);
+            opacity: 0.8; transition: 0.3s; text-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .debate-card:hover .play-icon { transform: scale(1.2); color: var(--accent); }
+
+        .card-info { padding: 15px; }
+        
+        .game-tag {
+            font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--accent); font-weight: 700; margin-bottom: 5px; display: block;
+        }
+        
+        .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 10px; line-height: 1.3; }
+        
+        .card-stats {
+            display: flex; gap: 15px; font-size: 0.8rem; color: var(--text-dim);
+        }
+        .stat { display: flex; align-items: center; gap: 5px; }
+        .stat i { color: #fff; }
+
+        /* EMPTY STATE */
+        .empty-feed {
+            text-align: center; padding: 50px; color: var(--text-dim); grid-column: 1 / -1;
+        }
+
+        /* BOTTOM NAV (Mobile Style) */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: rgba(10,10,10,0.95); backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex; justify-content: space-around; padding: 15px; z-index: 200;
+        }
+        .nav-item {
+            color: var(--text-dim); font-size: 1.5rem; text-decoration: none;
+            transition: 0.2s; position: relative;
+        }
+        .nav-item:hover, .nav-item.active { color: var(--accent); transform: translateY(-2px); }
+        .nav-item.active::after {
+            content:''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+            width: 5px; height: 5px; background: var(--accent); border-radius: 50%;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">DEBATE<span>ROOM</span></div>
+        <div class="user-pill">
+            <div class="avatar" id="headerAvatar"></div>
+            <span id="headerName">...</span>
+        </div>
+    </header>
+
+    <h1 class="page-title">Pour <span>Toi</span></h1>
+
+    <div class="feed-grid" id="feedContainer">
+        <div class="empty-feed">Chargement de votre flux personnalisé...</div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item"><i class="fa-solid fa-house"></i></a>
+        <a href="foryou.html" class="nav-item active"><i class="fa-solid fa-compass"></i></a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-plus-circle" style="font-size: 2rem; color: #fff;"></i></a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-trophy"></i></a>
+        <a href="#" class="nav-item"><i class="fa-regular fa-user"></i></a>
+    </nav>
+
+    <script>
+        // Charger le profil
+        const user = JSON.parse(localStorage.getItem('user_profile'));
+        if(user) {
+            document.getElementById('headerName').innerText = user.given_name;
+            document.getElementById('headerAvatar').style.backgroundImage = `url('${user.picture}')`;
+        }
+
+        async function loadFeed() {
+            if (!user || !user.email) return;
+
+            try {
+                // Appel API Backend
+                const res = await fetch(`http://localhost:3001/api/feed/foryou?email=${user.email}`);
+                const rooms = await res.json();
+
+                const container = document.getElementById('feedContainer');
+                
+                if (rooms.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-feed">
+                            <i class="fa-solid fa-ghost" style="font-size:3rem; margin-bottom:20px;"></i><br>
+                            Aucun débat actif sur vos jeux.<br>Lancez-en un !
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = ''; // Clear loading
+
+                rooms.forEach(room => {
+                    const votesTotal = (room.votes?.valid?.length || 0) + (room.votes?.inting?.length || 0);
+                    
+                    // Template de la carte
+                    const card = document.createElement('div');
+                    card.className = 'debate-card';
+                    card.onclick = () => window.location.href = `index.html?room=${room.slug}`; // Redirection intelligente
+
+                    card.innerHTML = `
+                        <div class="card-thumb">
+                            <i class="fa-solid fa-play-circle play-icon"></i>
+                            <video src="${room.videoUrl}" muted loop onmouseover="this.play()" onmouseout="this.pause()"></video>
+                        </div>
+                        <div class="card-info">
+                            <span class="game-tag">${room.game || 'Général'}</span>
+                            <div class="card-title">${room.videoTitle || 'Débat sans titre'}</div>
+                            <div class="card-stats">
+                                <div class="stat"><i class="fa-solid fa-users"></i> ${votesTotal} votes</div>
+                                <div class="stat"><i class="fa-regular fa-clock"></i> Récemment</div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (err) {
+                console.error("Erreur feed", err);
+            }
+        }
+
+        loadFeed();
+    </script>
+</body>
+</html>

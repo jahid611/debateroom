@@ -1,56 +1,175 @@
-<div
-  id="g_id_onload"
-  data-client_id="233594795614-4ti76o1u50quom8bedro552dhumdfgfk.apps.googleusercontent.com"
-  data-context="signin"
-  data-ux_mode="popup"
-  data-callback="handleCredentialResponse"
-  data-auto_prompt="false"
-></div>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DebateRoom | Connexion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root { --bg:#050505; --accent:#D4AF37; --text:#FFF; --surface:rgba(255,255,255,0.03); --border:rgba(255,255,255,0.08); }
+        * { box-sizing:border-box; outline:none; }
+        
+        body { 
+            background:var(--bg); color:var(--text); height:100vh; margin:0; 
+            font-family:'Outfit', sans-serif; display:flex; align-items:center; justify-content:center; 
+            background-image: radial-gradient(circle at 15% 50%, rgba(212, 175, 55, 0.08), transparent 25%),
+                              radial-gradient(circle at 85% 30%, rgba(70, 70, 70, 0.15), transparent 25%);
+            overflow:hidden;
+        }
 
-<div
-  class="g_id_signin"
-  data-type="standard"
-  data-shape="rectangular"
-  data-theme="outline"
-  data-text="signin_with"
-  data-size="large"
-  data-logo_alignment="left"
-></div>
+        /* Scanlines Effect */
+        body::after {
+            content: ""; position: absolute; inset: 0; pointer-events: none;
+            background: repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0, 0, 0, 0.2) 2px);
+            z-index: -1;
+        }
 
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+        .card { 
+            background: rgba(15, 15, 15, 0.7); backdrop-filter: blur(25px); 
+            border: 1px solid var(--border); padding: 50px 40px; border-radius: 24px; 
+            width: 100%; max-width: 420px; text-align: center; 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6); 
+            animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+        }
 
-<script>
-  function handleCredentialResponse(response) {
-    // Google renvoie un JWT (JSON Web Token)
-    const responsePayload = decodeJwtResponse(response.credential);
+        .card::before {
+            content:''; position: absolute; top:0; left:50%; transform: translateX(-50%);
+            width: 60%; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
 
-    console.log("ID: " + responsePayload.sub);
-    console.log("Full Name: " + responsePayload.name);
-    console.log("Given Name: " + responsePayload.given_name);
-    console.log("Family Name: " + responsePayload.family_name);
-    console.log("Image URL: " + responsePayload.picture);
-    console.log("Email: " + responsePayload.email);
+        h1 { font-family:'Oswald'; font-size: 2.8rem; margin: 0; letter-spacing: 1px; line-height: 1; }
+        h1 span { color:var(--accent); text-shadow: 0 0 20px rgba(212,175,55,0.3); }
+        p { color: #888; margin: 15px 0 40px; font-weight: 300; }
 
-    // Sauvegarder dans localStorage pour simuler une session
-    localStorage.setItem("user_profile", JSON.stringify(responsePayload));
+        .google-wrapper { 
+            margin-bottom: 30px; display: flex; justify-content: center; 
+            transition: transform 0.2s;
+        }
+        .google-wrapper:hover { transform: scale(1.02); }
 
-    // Rediriger vers l'app
-    window.location.href = "onboarding.html"; // ou votre page principale
-  }
+        .divider { display:flex; align-items:center; color:#444; margin: 25px 0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
+        .divider::before, .divider::after { content:''; flex:1; height:1px; background:#222; }
+        .divider span { padding: 0 15px; }
 
-  // Fonction pour décoder le token Google (car c'est encodé en base64)
-  function decodeJwtResponse(token) {
-    var base64Url = token.split(".")[1];
-    var base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    var jsonPayload = decodeURIComponent(
-      window
-        .atob(base64)
-        .split("")
-        .map(function (c) {
-          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-        })
-        .join("")
-    );
-    return JSON.parse(jsonPayload);
-  }
-</script>
+        .input-group { position: relative; margin-bottom: 15px; text-align: left; }
+        .input-group i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #666; transition: 0.3s; }
+        
+        input { 
+            width: 100%; background: var(--surface); border: 1px solid var(--border); 
+            padding: 16px 16px 16px 45px; border-radius: 12px; color: #fff; font-size: 1rem; transition: 0.3s; 
+        }
+        input:focus { border-color: var(--accent); background: rgba(212,175,55,0.05); }
+        input:focus + i { color: var(--accent); }
+
+        .btn-login { 
+            width: 100%; padding: 16px; background: var(--accent); color: #000; 
+            border: none; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; 
+            transition: 0.3s; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(212,175,55,0.25); }
+
+        .footer-link { margin-top: 25px; font-size: 0.9rem; color: #666; }
+        .footer-link a { color: #fff; text-decoration: none; font-weight: 500; transition: 0.3s; border-bottom: 1px solid transparent; }
+        .footer-link a:hover { color: var(--accent); border-color: var(--accent); }
+
+        /* Toast */
+        .toast { 
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); 
+            background: #111; border: 1px solid #333; color: #fff; padding: 12px 24px; 
+            border-radius: 50px; display: flex; align-items: center; gap: 10px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1000; opacity: 0; transition: 0.4s;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.error i { color: #ff4d4d; } .toast.success i { color: #2ecc71; }
+
+        @keyframes slideUp { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Debate<span>Room</span></h1>
+        <p>L'arène où les opinions s'affrontent.</p>
+
+        <div class="google-wrapper">
+            <div id="g_id_onload"
+                data-client_id="233594795614-4ti76o1u50quom8bedro552dhumdfgfk.apps.googleusercontent.com"
+                data-context="signin" data-ux_mode="popup" data-callback="handleGoogleLogin" data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_black" data-size="large" data-text="signin_with" data-width="320"></div>
+        </div>
+
+        <div class="divider"><span>ou via email</span></div>
+
+        <div class="input-group">
+            <input type="email" id="email" placeholder="Adresse Email">
+            <i class="fa-regular fa-envelope"></i>
+        </div>
+        <div class="input-group">
+            <input type="password" id="password" placeholder="Mot de passe">
+            <i class="fa-solid fa-lock"></i>
+        </div>
+
+        <button class="btn-login" onclick="manualLogin()">Entrer</button>
+
+        <div class="footer-link">
+            Pas encore membre ? <a href="onboarding.html">Créer un compte</a>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"><i class="fa-solid fa-circle-exclamation"></i><span>Erreur</span></div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        localStorage.removeItem('user_profile'); // Clean start
+
+        async function manualLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if(!email || !password) return showToast("Remplis tout !", "error");
+
+            try {
+                const res = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if(res.ok) saveAndRedirect(data.user, data.redirect);
+                else showToast(data.error, "error");
+            } catch(e) { showToast("Serveur injoignable", "error"); }
+        }
+
+        async function handleGoogleLogin(response) {
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            try {
+                const res = await fetch('http://localhost:3001/api/auth/google', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: payload.email, token: response.credential })
+                });
+                const data = await res.json();
+                if (data.redirect === 'index.html') saveAndRedirect(data.user, 'index.html');
+                else {
+                    localStorage.setItem('temp_google_user', JSON.stringify(payload));
+                    window.location.href = 'onboarding.html';
+                }
+            } catch(e) { showToast("Erreur Google", "error"); }
+        }
+
+        function saveAndRedirect(user, page) {
+            const profile = { email: user.email, name: user.name, given_name: user.pseudo || user.name, picture: user.avatar };
+            localStorage.setItem('user_profile', JSON.stringify(profile));
+            window.location.href = page;
+        }
+
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.querySelector('span').innerText = msg;
+            t.className = `toast ${type} show`;
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
