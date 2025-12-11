@@ -69,7 +69,7 @@ io.on('connection', (socket) => {
             },
             messages: history,
             votes: scores,
-            roomId: roomId // Important pour que le front sache où il est
+            roomId: roomId // <--- TRÈS IMPORTANT : C'est la clé pour que le front sache où afficher !
         });
     });
 

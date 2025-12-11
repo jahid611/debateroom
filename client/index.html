@@ -170,7 +170,6 @@
             } catch(e) { console.error(e); }
         }
 
-        // Remplace ta fonction initObserver par celle-ci :
         function initObserver() {
             const obs = new IntersectionObserver(entries => {
                 entries.forEach(e => {
@@ -178,32 +177,26 @@
                     const roomId = e.target.dataset.slug;
 
                     if(e.isIntersecting) {
-                        console.log("👀 Vue sur :", roomId); // DEBUG
+                        console.log("👀 Vue sur :", roomId); 
                         
-                        // 1. On rejoint la salle Socket pour recevoir les messages
                         socket.emit('join_room', roomId);
                         
-                        // 2. On lance la vidéo
                         if(video) video.play();
                     } else {
-                        // 3. Si on ne regarde plus, on quitte (optionnel) et on pause
-                        // socket.emit('leave_room', roomId); // (À implémenter côté serveur si besoin)
                         if(video) { 
                             video.pause(); 
                             video.currentTime = 0; 
                         }
                     }
                 });
-            }, {threshold: 0.5}); // Se déclenche quand 50% de la vidéo est visible
+            }, {threshold: 0.5}); 
 
-            // On observe toutes les slides
             const slides = document.querySelectorAll('.slide');
             slides.forEach(s => obs.observe(s));
         }
 
-        // Ajoute ceci dans ta fonction 'receive_message' pour debug
         socket.on('receive_message', msg => {
-            console.log("📩 Message reçu pour la room :", msg.roomId); // DEBUG
+            console.log("📩 Message reçu pour la room :", msg.roomId); 
             const box = document.getElementById(`chat-${msg.roomId}`);
             
             if(box) {
@@ -226,7 +219,6 @@
         });
 
         window.doVote = (rid, choice) => {
-            // Anim instantanée
             const box = document.getElementById(`votes-${rid}`);
             box.querySelectorAll('.v-btn').forEach(b => b.classList.remove('active'));
             box.querySelector(`.${choice}`).classList.add('active');
