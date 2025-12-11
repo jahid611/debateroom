@@ -587,45 +587,49 @@
       </div>
     </div>
 
-    <script>
-      // 1. SÉCURITÉ & AUTHENTIFICATION
-      const rawUser = localStorage.getItem("user_profile");
-      if (!rawUser) window.location.href = "login.html";
-      const user = JSON.parse(rawUser);
+  <script>
+        const rawUser = localStorage.getItem('user_profile');
+        if(!rawUser) window.location.href = 'login.html';
+        const user = JSON.parse(rawUser);
+        document.getElementById('headName').innerText = user.given_name;
+        document.getElementById('headAvatar').style.backgroundImage = `url('${user.picture || "https://cdn-icons-png.flaticon.com/512/847/847969.png"}')`;
 
-      // Mise à jour de l'interface utilisateur
-      document.getElementById("headName").innerText = user.given_name;
-      document.getElementById("headAvatar").style.backgroundImage = `url('${
-        user.picture || "https://cdn-icons-png.flaticon.com/512/847/847969.png"
-      }')`;
+        const socket = io("https://debateroom-u1gz.onrender.com");
+        
+        // --- AFFICHAGE INTELLIGENT (Vidéo vs Youtube) ---
+        function getPlayerHTML(room) {
+            // Si le lien contient "youtube.com/embed", on met une iframe
+            if (room.videoUrl.includes('youtube.com/embed')) {
+                return `<iframe src="${room.videoUrl}" style="width:100%; height:100%; border:none; pointer-events:none;" allow="autoplay; encrypted-media"></iframe>`;
+            } 
+            // Sinon, c'est un fichier MP4 classique (TikTok, Upload, Outplayed)
+            else {
+                return `<video src="${room.videoUrl}" loop playsinline muted></video>`;
+            }
+        }
 
-      // 2. CONNEXION SOCKET (Mets ton lien Render ici)
-      const socket = io("https://debateroom-u1gz.onrender.com");
+        async function loadFeed() {
+            try {
+                const res = await fetch('https://debateroom-u1gz.onrender.com/api/feed/foryou?email='+user.email);
+                const rooms = await res.json();
+                const container = document.getElementById('feedContainer');
+                container.innerHTML = '';
 
-      // --- LOGIQUE FEED ---
-      async function loadFeed() {
-        try {
-          const res = await fetch(
-            "https://debateroom-u1gz.onrender.com/api/feed/foryou?email=" +
-              user.email
-          );
-          const rooms = await res.json();
-          const container = document.getElementById("feedContainer");
-          container.innerHTML = "";
+                if(rooms.length === 0) container.innerHTML = '<div style="height:100vh;display:flex;align-items:center;justify-content:center;color:#666;">Aucun débat. Lancez-en un !</div>';
 
-          if (rooms.length === 0)
-            container.innerHTML =
-              '<div style="height:100vh;display:flex;align-items:center;justify-content:center;color:#666;">Aucun débat. Lancez-en un !</div>';
+                rooms.forEach(room => {
+                    const v = room.votes?.valid?.length || 0;
+                    const i = room.votes?.inting?.length || 0;
+                    
+                    const slide = document.createElement('div');
+                    slide.className = 'slide';
+                    slide.dataset.slug = room.slug;
+                    
+                    // ON UTILISE LA FONCTION INTELLIGENTE ICI
+                    const player = getPlayerHTML(room);
 
-          rooms.forEach((room) => {
-            const v = room.votes?.valid?.length || 0;
-            const i = room.votes?.inting?.length || 0;
-
-            const slide = document.createElement("div");
-            slide.className = "slide";
-            slide.dataset.slug = room.slug;
-            slide.innerHTML = `
-                        <div class="video-zone"><video src="${room.videoUrl}" loop playsinline muted></video></div>
+                    slide.innerHTML = `
+                        <div class="video-zone">${player}</div>
                         <div class="ui-zone">
                             <div class="info"><span class="tag">${room.game}</span><div class="title">${room.videoTitle}</div></div>
                             <div class="votes" id="votes-${room.slug}">
@@ -639,241 +643,160 @@
                             </div>
                         </div>
                     `;
-            container.appendChild(slide);
-          });
-          initObserver();
-        } catch (e) {
-          console.error(e);
+                    container.appendChild(slide);
+                });
+                initObserver();
+            } catch(e) { console.error(e); }
         }
-      }
 
-      function initObserver() {
-        const obs = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((e) => {
-              const video = e.target.querySelector("video");
-              const roomId = e.target.dataset.slug;
-              if (e.isIntersecting) {
-                socket.emit("join_room", roomId);
-                if (video) video.play();
-              } else {
-                if (video) {
-                  video.pause();
-                  video.currentTime = 0;
+        function initObserver() {
+            const obs = new IntersectionObserver(entries => {
+                entries.forEach(e => {
+                    const roomId = e.target.dataset.slug;
+                    // On gère les deux types de lecteurs
+                    const video = e.target.querySelector('video');
+                    const iframe = e.target.querySelector('iframe');
+
+                    if(e.isIntersecting) {
+                        socket.emit('join_room', roomId);
+                        if(video) video.play();
+                        // Pour l'iframe YouTube, l'autoplay est dans l'URL, pas besoin de JS
+                    } else {
+                        if(video) { video.pause(); video.currentTime = 0; }
+                        // Pour couper le son de l'iframe quand on scroll, on recharge la source (hack)
+                        if(iframe) { const src = iframe.src; iframe.src = src; }
+                    }
+                });
+            }, {threshold:0.5});
+            document.querySelectorAll('.slide').forEach(s => obs.observe(s));
+        }
+
+        // --- SOCKETS (Chat, Vote, Delete) ---
+        socket.on('init_room', (data) => {
+            const box = document.getElementById(`chat-${data.roomId}`);
+            if(box) {
+                box.innerHTML = '<div class="msg sys">Historique chargé</div>';
+                const isRoomOwner = data.ownerEmail === user.email;
+                if(data.messages) {
+                    data.messages.forEach(msg => addMessageToUI(box, msg, isRoomOwner));
                 }
-              }
-            });
-          },
-          { threshold: 0.5 }
-        );
-        document.querySelectorAll(".slide").forEach((s) => obs.observe(s));
-      }
-
-      // --- GESTION UPLOAD & MODAL (C'est ici que ça manquait !) ---
-      let uploadMode = "link";
-
-      window.switchTab = (mode) => {
-        uploadMode = mode;
-        const linkGroup = document.getElementById("inputLinkGroup");
-        const fileGroup = document.getElementById("inputFileGroup");
-        const tabLink = document.getElementById("tabLink");
-        const tabFile = document.getElementById("tabFile");
-
-        if (mode === "link") {
-          linkGroup.style.display = "block";
-          fileGroup.style.display = "none";
-          tabLink.style.background = "#333";
-          tabLink.style.color = "#fff";
-          tabFile.style.background = "transparent";
-          tabFile.style.color = "#888";
-        } else {
-          linkGroup.style.display = "none";
-          fileGroup.style.display = "block";
-          tabFile.style.background = "#333";
-          tabFile.style.color = "#fff";
-          tabLink.style.background = "transparent";
-          tabLink.style.color = "#888";
-        }
-      };
-
-      window.updateFileName = () => {
-        const file = document.getElementById("videoFile").files[0];
-        if (file) document.getElementById("fileName").innerText = file.name;
-      };
-
-      window.createRoom = async () => {
-        const game = document.getElementById("newGame").value;
-        const btn = document.querySelector(".btn-pub");
-        const originalText = btn.innerText;
-
-        btn.innerText = "Traitement... ⏳";
-        btn.disabled = true;
-        btn.style.opacity = "0.5";
-
-        try {
-          let finalSrc = "";
-
-          if (uploadMode === "link") {
-            // MODE LIEN
-            const url = document.getElementById("newLink").value;
-            if (!url) throw new Error("Lien requis");
-
-            const res = await fetch(
-              `https://debateroom-u1gz.onrender.com/api/video/resolve?url=${encodeURIComponent(
-                url
-              )}`
-            );
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            finalSrc = data.src;
-          } else {
-            // MODE FICHIER
-            const fileInput = document.getElementById("videoFile");
-            if (!fileInput.files[0])
-              throw new Error("Aucun fichier sélectionné");
-
-            const formData = new FormData();
-            formData.append("videoFile", fileInput.files[0]);
-
-            const res = await fetch(
-              "https://debateroom-u1gz.onrender.com/api/video/upload",
-              {
-                method: "POST",
-                body: formData,
-              }
-            );
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            finalSrc = data.src;
-          }
-
-          // CRÉATION AVEC EMAIL DU PROPRIO (Important pour la suppression)
-          socket.emit("create_room", {
-            src: finalSrc,
-            title: uploadMode === "link" ? "Import Lien" : "Upload Utilisateur",
-            game: game,
-            platform: uploadMode === "link" ? "Web" : "Upload",
-            userEmail: user.email, // <--- C'est ça qui te donne les droits admin sur ta vidéo
-          });
-
-          closeModal();
-        } catch (e) {
-          alert(e.message || "Erreur lors de l'upload");
-          btn.innerText = originalText;
-          btn.disabled = false;
-          btn.style.opacity = "1";
-        }
-      };
-
-      socket.on("room_created", () => {
-        window.location.reload();
-      });
-
-      // --- GESTION MESSAGES ET VOTES ---
-      socket.on("init_room", (data) => {
-        const box = document.getElementById(`chat-${data.roomId}`);
-        if (box) {
-          box.innerHTML = '<div class="msg sys">Historique chargé</div>';
-          const isRoomOwner = data.ownerEmail === user.email;
-          if (data.messages) {
-            data.messages.forEach((msg) =>
-              addMessageToUI(box, msg, isRoomOwner)
-            );
-          }
-          box.scrollTop = box.scrollHeight;
-        }
-        if (data.votes) {
-          const vb = document.getElementById(`votes-${data.roomId}`);
-          if (vb) {
-            vb.querySelector(".valid .c").innerText = data.votes.valid;
-            vb.querySelector(".inting .c").innerText = data.votes.inting;
-          }
-        }
-      });
-
-      socket.on("receive_message", (msg) => {
-        const box = document.getElementById(`chat-${msg.roomId}`);
-        if (box) {
-          addMessageToUI(box, msg, false);
-          box.scrollTop = box.scrollHeight;
-        }
-      });
-
-      socket.on("message_deleted", (msgId) => {
-        const el = document.getElementById(`msg-${msgId}`);
-        if (el) {
-          el.style.opacity = "0";
-          setTimeout(() => el.remove(), 300);
-        }
-      });
-
-      function addMessageToUI(container, msg, isRoomOwner) {
-        const div = document.createElement("div");
-        div.className = "msg";
-        div.id = `msg-${msg._id}`;
-        const canDelete = msg.userEmail === user.email || isRoomOwner;
-        const deleteBtn = canDelete
-          ? `<i class="fa-solid fa-trash" style="color:#666; cursor:pointer; margin-left:10px; font-size:0.8rem;" onclick="deleteMsg('${msg._id}', '${msg.roomId}')"></i>`
-          : "";
-
-        div.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:start;"><span><b>${msg.username}:</b> ${msg.text}</span>${deleteBtn}</div>`;
-        container.appendChild(div);
-      }
-
-      window.deleteMsg = (msgId, roomId) => {
-        if (confirm("Supprimer ?"))
-          socket.emit("delete_message", {
-            messageId: msgId,
-            roomId: roomId,
-            userEmail: user.email,
-          });
-      };
-
-      window.sendMsg = (rid) => {
-        const input = document.querySelector(
-          `.slide[data-slug="${rid}"] .c-in`
-        );
-        if (input.value) {
-          socket.emit("send_message", {
-            roomId: rid,
-            username: user.given_name,
-            userEmail: user.email,
-            text: input.value,
-          });
-          input.value = "";
-        }
-      };
-      window.checkKey = (e, rid) => {
-        if (e.key === "Enter") sendMsg(rid);
-      };
-
-      window.doVote = (rid, c) => {
-        const box = document.getElementById(`votes-${rid}`);
-        box
-          .querySelectorAll(".v-btn")
-          .forEach((b) => b.classList.remove("active"));
-        box.querySelector(`.${c}`).classList.add("active");
-        socket.emit("send_vote", {
-          roomId: rid,
-          choice: c,
-          userId: user.email,
+                box.scrollTop = box.scrollHeight;
+            }
+            if(data.votes) {
+                const vb = document.getElementById(`votes-${data.roomId}`);
+                if(vb) {
+                    vb.querySelector('.valid .c').innerText = data.votes.valid;
+                    vb.querySelector('.inting .c').innerText = data.votes.inting;
+                }
+            }
         });
-      };
 
-      // --- MENU & MODAL ---
-      window.toggleMenu = () =>
-        document.getElementById("menu").classList.toggle("show");
-      window.logout = () => {
-        localStorage.clear();
-        window.location.href = "login.html";
-      };
-      window.openModal = () =>
-        document.getElementById("addModal").classList.add("show");
-      window.closeModal = () =>
-        document.getElementById("addModal").classList.remove("show");
+        socket.on('receive_message', (msg) => {
+            const box = document.getElementById(`chat-${msg.roomId}`);
+            if(box) {
+                addMessageToUI(box, msg, false); 
+                box.scrollTop = box.scrollHeight;
+            }
+        });
 
-      // GO
-      loadFeed();
+        socket.on('message_deleted', (msgId) => {
+            const el = document.getElementById(`msg-${msgId}`);
+            if(el) { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }
+        });
+
+        function addMessageToUI(container, msg, isRoomOwner) {
+            const div = document.createElement('div');
+            div.className = 'msg';
+            div.id = `msg-${msg._id}`;
+            const canDelete = (msg.userEmail === user.email) || isRoomOwner;
+            const deleteBtn = canDelete ? `<i class="fa-solid fa-trash" style="color:#666; cursor:pointer; margin-left:10px; font-size:0.8rem;" onclick="deleteMsg('${msg._id}', '${msg.roomId}')"></i>` : '';
+            div.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:start;"><span><b>${msg.username}:</b> ${msg.text}</span>${deleteBtn}</div>`;
+            container.appendChild(div);
+        }
+
+        // --- ACTIONS ---
+        window.deleteMsg = (msgId, roomId) => {
+            if(confirm("Supprimer ?")) socket.emit('delete_message', { messageId: msgId, roomId: roomId, userEmail: user.email });
+        };
+
+        window.sendMsg = (rid) => {
+            const input = document.querySelector(`.slide[data-slug="${rid}"] .c-in`);
+            if(input.value) {
+                socket.emit('send_message', { roomId: rid, username: user.given_name, userEmail: user.email, text: input.value });
+                input.value = '';
+            }
+        };
+        window.checkKey = (e, rid) => { if(e.key==='Enter') sendMsg(rid); };
+
+        window.doVote = (rid, c) => {
+            const box = document.getElementById(`votes-${rid}`);
+            box.querySelectorAll('.v-btn').forEach(b => b.classList.remove('active'));
+            box.querySelector(`.${c}`).classList.add('active');
+            socket.emit('send_vote', { roomId:rid, choice:c, userId:user.email });
+        };
+
+        socket.on('update_votes', d => {
+            const b = document.getElementById(`votes-${d.roomId}`);
+            if(b) { b.querySelector('.valid .c').innerText=d.valid; b.querySelector('.inting .c').innerText=d.inting; }
+        });
+
+        // --- CREATE ROOM ---
+        let uploadMode = 'link';
+        window.switchTab = (m) => {
+            uploadMode = m;
+            document.getElementById('inputLinkGroup').style.display = m==='link'?'block':'none';
+            document.getElementById('inputFileGroup').style.display = m==='file'?'block':'none';
+            document.getElementById('tabLink').style.background = m==='link'?'#333':'transparent';
+            document.getElementById('tabFile').style.background = m==='file'?'#333':'transparent';
+        };
+        window.updateFileName = () => {
+            const f = document.getElementById('videoFile').files[0];
+            if(f) document.getElementById('fileName').innerText = f.name;
+        };
+
+        window.createRoom = async () => {
+            const game = document.getElementById('newGame').value;
+            const btn = document.querySelector('.btn-pub');
+            btn.innerText = "Traitement..."; btn.disabled = true;
+
+            try {
+                let finalSrc = "";
+                if (uploadMode === 'link') {
+                    const url = document.getElementById('newLink').value;
+                    if (!url) throw new Error("Lien requis");
+                    const res = await fetch(`https://debateroom-u1gz.onrender.com/api/video/resolve?url=${encodeURIComponent(url)}`);
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error);
+                    finalSrc = data.src;
+                } else {
+                    const f = document.getElementById('videoFile').files[0];
+                    if (!f) throw new Error("Fichier requis");
+                    const fd = new FormData(); fd.append('videoFile', f);
+                    const res = await fetch('https://debateroom-u1gz.onrender.com/api/video/upload', { method: 'POST', body: fd });
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error);
+                    finalSrc = data.src;
+                }
+
+                socket.emit('create_room', { 
+                    src: finalSrc, title: uploadMode==='link'?"Lien":"Upload", 
+                    game: game, platform: "Web", userEmail: user.email 
+                });
+                closeModal();
+            } catch (e) {
+                alert(e.message); btn.innerText = "PUBLIER"; btn.disabled = false;
+            }
+        };
+
+        socket.on('room_created', () => window.location.reload());
+
+        // UI UTILS
+        window.toggleMenu = () => document.getElementById('menu').classList.toggle('show');
+        window.logout = () => { localStorage.clear(); window.location.href='login.html'; };
+        window.openModal = () => document.getElementById('addModal').classList.add('show');
+        window.closeModal = () => document.getElementById('addModal').classList.remove('show');
+
+        loadFeed();
     </script>
   </body>
 </html>
