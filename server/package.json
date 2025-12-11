@@ -4,9 +4,10 @@
   "description": "Backend API for DebateRoom",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
-  },
+  "start": "node server.js",
+  "dev": "nodemon server.js",
+  "build": "npm install && node install_binary.js" 
+},
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
