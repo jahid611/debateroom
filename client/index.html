@@ -749,27 +749,60 @@
             color: #000;
         }
 
+        /* Refonte complete de la zone upload pour un design plus moderne et clean */
         .upload-zone {
-            border: 2px dashed var(--border);
+            position: relative;
             border-radius: 16px;
-            padding: 40px 20px;
+            padding: 48px 24px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, rgba(212,175,55,0.03) 0%, rgba(212,175,55,0.08) 100%);
+            overflow: hidden;
+        }
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            padding: 2px;
+            background: linear-gradient(135deg, rgba(212,175,55,0.4), rgba(212,175,55,0.1), rgba(212,175,55,0.4));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
         }
         .upload-zone:hover {
-            border-color: var(--accent);
-            background: rgba(212,175,55,0.05);
+            background: linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.15) 100%);
+            transform: translateY(-2px);
         }
-        .upload-zone i {
-            font-size: 2.5rem;
-            color: var(--accent);
-            margin-bottom: 12px;
+        .upload-zone:hover::before {
+            background: linear-gradient(135deg, rgba(212,175,55,0.8), rgba(212,175,55,0.3), rgba(212,175,55,0.8));
+        }
+        .upload-zone .upload-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, var(--accent), #f0d060);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(212,175,55,0.3);
+        }
+        .upload-zone .upload-icon i {
+            font-size: 1.5rem;
+            color: #000;
         }
         .upload-zone span {
             display: block;
             color: var(--text-secondary);
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .upload-zone .file-selected {
+            color: var(--accent);
+            font-weight: 600;
         }
         .upload-zone input { display: none; }
 
@@ -969,9 +1002,12 @@
             <input type="text" class="form-input" id="newLinkInput" placeholder="Coller un lien YouTube, TikTok...">
         </div>
 
+        <!-- Mise a jour du HTML de la zone upload avec la nouvelle structure -->
         <div id="fileInputGroup" style="display:none;">
             <label class="upload-zone">
-                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <div class="upload-icon">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
                 <span id="uploadFileName">Choisir une video</span>
                 <input type="file" id="videoFileInput" accept="video/*" onchange="handleFileSelect()">
             </label>
@@ -1313,8 +1349,13 @@
 
     window.handleFileSelect = () => {
         const file = document.getElementById('videoFileInput').files[0];
+        const uploadFileName = document.getElementById('uploadFileName');
         if (file) {
-            document.getElementById('uploadFileName').innerText = file.name;
+            uploadFileName.innerText = file.name;
+            uploadFileName.classList.add('file-selected');
+        } else {
+            uploadFileName.innerText = 'Choisir une video';
+            uploadFileName.classList.remove('file-selected');
         }
     };
 
