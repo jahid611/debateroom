@@ -65,6 +65,112 @@
             gap: 30px;
         }
 
+        /* Mobile Carousel Styles */
+        .carousel-mobile {
+            display: none;
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(180deg, rgba(212,175,55,0.05) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .carousel-mobile-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .carousel-mobile-track {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding: 10px 0;
+        }
+
+        .carousel-mobile-track::-webkit-scrollbar {
+            display: none;
+        }
+
+        .carousel-mobile-card {
+            flex: 0 0 260px;
+            scroll-snap-align: center;
+            background: linear-gradient(145deg, rgba(20,20,20,0.95), rgba(10,10,10,0.98));
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .carousel-mobile-card:first-child {
+            margin-left: calc(50% - 130px);
+        }
+
+        .carousel-mobile-card:last-child {
+            margin-right: calc(50% - 130px);
+        }
+
+        .carousel-mobile-card.active {
+            border-color: var(--accent);
+            box-shadow: 0 10px 30px rgba(212,175,55,0.15);
+        }
+
+        .carousel-mobile-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--accent), #b8962e);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #000;
+            flex-shrink: 0;
+        }
+
+        .carousel-mobile-content h4 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .carousel-mobile-content p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .carousel-mobile-dots {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 15px;
+        }
+
+        .carousel-mobile-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .carousel-mobile-dot.active {
+            background: var(--accent);
+            transform: scale(1.2);
+        }
+
         .carousel-container {
             width: 100%;
             height: 500px;
@@ -651,10 +757,14 @@
         @media (max-width: 1200px) {
             .carousel-showcase { display: none; }
             .page-wrapper { max-width: 900px; }
+            .carousel-mobile { display: block; } /* Show mobile carousel on larger screens when desktop carousel is hidden */
         }
 
         @media (max-width: 850px) {
             .page-wrapper { padding: 10px; }
+            
+            /* Mobile carousel is now intended to be displayed within the container for mobile layout */
+            .carousel-mobile { display: block; } 
             
             .container {
                 flex-direction: column;
@@ -688,10 +798,33 @@
 
             .form-grid { grid-template-columns: 1fr; }
             .form-grid .full { grid-column: span 1; }
-            .games-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .content-header h2 { font-size: 1.6rem; }
-            .actions { flex-direction: column; }
-            .btn { width: 100%; justify-content: center; }
+
+            .carousel-mobile-card {
+                flex: 0 0 220px;
+                padding: 15px;
+            }
+
+            .carousel-mobile-card:first-child {
+                margin-left: calc(50% - 110px);
+            }
+
+            .carousel-mobile-card:last-child {
+                margin-right: calc(50% - 130px); /* Corrected from 110px to 130px to match original */
+            }
+
+            .carousel-mobile-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+
+            .carousel-mobile-content h4 {
+                font-size: 0.85rem;
+            }
+
+            .carousel-mobile-content p {
+                font-size: 0.7rem;
+            }
         }
     </style>
 </head>
@@ -699,7 +832,7 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <div class="page-wrapper">
-        <!-- New 3D Carousel Showcase -->
+        <!-- New 3D Carousel Showcase (Desktop) -->
         <div class="carousel-showcase">
             <div class="carousel-container">
                 <div class="carousel-track">
@@ -767,7 +900,65 @@
             </div>
         </div>
 
+        <!-- Moved mobile carousel inside container and restructure layout -->
         <div class="container">
+            <!-- Mobile Carousel (inside container for mobile) -->
+            <div class="carousel-mobile">
+                <div class="carousel-mobile-title">Decouvre DebateRoom</div>
+                <div class="carousel-mobile-track">
+                    <div class="carousel-mobile-card active">
+                        <div class="carousel-mobile-icon"><i class="fa-solid fa-gavel"></i></div>
+                        <div class="carousel-mobile-content">
+                            <h4>Debats en Direct</h4>
+                            <p>Affrontez-vous en temps reel sur vos clips gaming.</p>
+                        </div>
+                    </div>
+                    <div class="carousel-mobile-card">
+                        <div class="carousel-mobile-icon"><i class="fa-solid fa-gamepad"></i></div>
+                        <div class="carousel-mobile-content">
+                            <h4>Multi-Gaming</h4>
+                            <p>LoL, Valorant, Rocket League et plus.</p>
+                        </div>
+                    </div>
+                    <div class="carousel-mobile-card">
+                        <div class="carousel-mobile-icon"><i class="fa-solid fa-users"></i></div>
+                        <div class="carousel-mobile-content">
+                            <h4>Communaute</h4>
+                            <p>Des milliers de passionnes comme toi.</p>
+                        </div>
+                    </div>
+                    <div class="carousel-mobile-card">
+                        <div class="carousel-mobile-icon"><i class="fa-solid fa-ranking-star"></i></div>
+                        <div class="carousel-mobile-content">
+                            <h4>Classements</h4>
+                            <p>Grimpe les echelons et prouve ton expertise.</p>
+                        </div>
+                    </div>
+                    <div class="carousel-mobile-card">
+                        <div class="carousel-mobile-icon"><i class="fa-solid fa-trophy"></i></div>
+                        <div class="carousel-mobile-content">
+                            <h4>Tournois</h4>
+                            <p>Competitions exclusives a venir.</p>
+                        </div>
+                    </div>
+                    <div class="carousel-mobile-card">
+                        <div class="carousel-mobile-icon"><i class="fa-solid fa-gift"></i></div>
+                        <div class="carousel-mobile-content">
+                            <h4>Recompenses</h4>
+                            <p>Gagne des prix et contenu unique.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-mobile-dots">
+                    <div class="carousel-mobile-dot active"></div>
+                    <div class="carousel-mobile-dot"></div>
+                    <div class="carousel-mobile-dot"></div>
+                    <div class="carousel-mobile-dot"></div>
+                    <div class="carousel-mobile-dot"></div>
+                    <div class="carousel-mobile-dot"></div>
+                </div>
+            </div>
+
             <div class="sidebar">
                 <div class="sidebar-header">
                     <div class="sidebar-logo">
@@ -970,6 +1161,37 @@
         }, 5000);
 
         updateCarousel(0);
+
+        // ============ MOBILE CAROUSEL LOGIC ============
+        const mobileFeatureCards = document.querySelectorAll('.carousel-mobile-card');
+        const mobileCarouselDots = document.querySelectorAll('.carousel-mobile-dot');
+        let mobileCarouselIndex = 0;
+
+        function updateMobileCarousel(newIndex) {
+            mobileCarouselIndex = (newIndex + mobileFeatureCards.length) % mobileFeatureCards.length;
+
+            mobileFeatureCards.forEach((card, i) => {
+                card.classList.toggle('active', i === mobileCarouselIndex);
+            });
+
+            mobileCarouselDots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === mobileCarouselIndex);
+            });
+        }
+
+        mobileCarouselDots.forEach((dot, i) => {
+            dot.addEventListener('click', () => updateMobileCarousel(i));
+        });
+
+        mobileFeatureCards.forEach((card, i) => {
+            card.addEventListener('click', () => updateMobileCarousel(i));
+        });
+
+        setInterval(() => {
+            updateMobileCarousel(mobileCarouselIndex + 1);
+        }, 5000);
+
+        updateMobileCarousel(0);
 
         // ============ ONBOARDING LOGIC (UNCHANGED) ============
         let googleUser = null;
