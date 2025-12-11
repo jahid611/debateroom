@@ -84,6 +84,31 @@
         input:focus { border-color:var(--accent); }
         .send { width:48px; height:48px; border-radius:50%; background:var(--accent); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#000; transition:0.2s; font-size:1rem; }
 
+        /* STYLE BADGES JOUEUR */
+        .msg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .msg-avatar { width: 24px; height: 24px; border-radius: 50%; background-size: cover; border: 1px solid var(--border); flex-shrink: 0; }
+        
+        .user-badges { position: relative; display: inline-block; margin-left: 5px; cursor: help; }
+        
+        /* Badge Principal (Visible tout le temps) */
+        .main-badge { 
+            font-size: 0.65rem; background: rgba(255,255,255,0.1); border: 1px solid var(--border);
+            padding: 2px 6px; border-radius: 4px; color: #aaa; transition: 0.2s; white-space: nowrap;
+        }
+        .user-badges:hover .main-badge { color: var(--accent); border-color: var(--accent); background: rgba(212,175,55,0.1); }
+
+        /* Popup (Visible au hover) */
+        .badges-popup {
+            display: none; position: absolute; bottom: 20px; left: 0;
+            background: #222; border: 1px solid var(--accent); border-radius: 8px;
+            padding: 8px; z-index: 100; box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+            min-width: 120px;
+        }
+        .user-badges:hover .badges-popup { display: block; animation: fadeIn 0.2s; }
+        
+        .popup-row { font-size: 0.7rem; color: #ccc; margin-bottom: 4px; display: flex; justify-content: space-between; gap: 10px; }
+        .popup-row span.r { color: var(--accent); font-weight: bold; }
+
         /* --- MOBILE LAYOUT --- */
         @media(max-width: 900px) {
             .app-container { grid-template-columns: 1fr; padding-top: 0; }
@@ -336,14 +361,57 @@
             }
         });
 
-        function addMessageToUI(container, msg, isOwner) {
+        function addMessageToUI(container, msg, isRoomOwner) {
             const div = document.createElement('div');
-            div.className = 'msg'; div.id = `msg-${msg._id}`;
-            const canDel = (msg.userEmail === user.email) || isOwner;
-            const delBtn = canDel ? `<i class="fa-solid fa-trash" style="color:#666; cursor:pointer; margin-left:10px; font-size:0.8rem;" onclick="deleteMsg('${msg._id}','${msg.roomId}')"></i>` : '';
-            div.innerHTML = `<div style="display:flex; justify-content:space-between;"><span><b>${msg.username}:</b> ${msg.text}</span>${delBtn}</div>`;
+            div.className = 'msg';
+            div.id = `msg-${msg._id}`;
+            
+            const canDelete = (msg.userEmail === user.email) || isRoomOwner;
+            const deleteBtn = canDelete ? `<i class="fa-solid fa-trash" style="color:#666; cursor:pointer; margin-left:auto; font-size:0.8rem;" onclick="deleteMsg('${msg._id}', '${msg.roomId}')"></i>` : '';
+
+            // LOGIQUE BADGES
+            let badgesHTML = '';
+            if (msg.games && msg.games.length > 0 && msg.details) {
+                // 1. Le jeu principal (le premier de la liste)
+                const mainGame = msg.games[0];
+                const mainRank = msg.details[mainGame]?.rank || 'Unranked';
+                
+                // 2. La liste complète pour le hover
+                let popupContent = '';
+                msg.games.forEach(g => {
+                    const r = msg.details[g]?.rank || '-';
+                    // Petite map pour les noms courts
+                    const names = { 'lol': 'LoL', 'valorant': 'Valo', 'fortnite': 'Fort', 'rl': 'RL' };
+                    popupContent += `<div class="popup-row"><span>${names[g] || g}</span> <span class="r">${r}</span></div>`;
+                });
+
+                badgesHTML = `
+                    <div class="user-badges">
+                        <div class="main-badge">${names[mainGame] || mainGame} • ${mainRank} ${msg.games.length > 1 ? '+' : ''}</div>
+                        <div class="badges-popup">${popupContent}</div>
+                    </div>
+                `;
+            }
+
+            // Avatar par défaut si absent
+            const avatarUrl = msg.avatar || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+
+            div.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    <div class="msg-header">
+                        <div class="msg-avatar" style="background-image:url('${avatarUrl}')"></div>
+                        <b style="color:var(--accent); font-size:0.85rem;">${msg.username}</b>
+                        ${badgesHTML}
+                        ${deleteBtn}
+                    </div>
+                    <div style="padding-left:32px; font-size:0.95rem; color:#ddd;">${msg.text}</div>
+                </div>
+            `;
             container.appendChild(div);
         }
+        
+        // Petit helper pour les noms courts (à mettre hors de la fonction si tu veux)
+        const names = { 'lol': 'LoL', 'valorant': 'Valo', 'fortnite': 'Fort', 'rl': 'RL' };
 
         window.deleteMsg = (mid, rid) => { if(confirm("Supprimer ?")) socket.emit('delete_message', { messageId:mid, roomId:rid, userEmail:user.email }); };
         socket.on('message_deleted', (mid) => { const el = document.getElementById(`msg-${mid}`); if(el) el.remove(); });

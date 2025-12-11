@@ -10,6 +10,7 @@ const Room = require('./models/Room');
 
 const app = express();
 const server = http.createServer(app);
+const User = require('./models/User');
 
 app.use(cors());
 app.use(express.json());
@@ -90,15 +91,27 @@ io.on('connection', (socket) => {
 
     // 4. CHAT (Envoi)
     socket.on('send_message', async (data) => {
-        const newMsg = new Message({
-            roomId: data.roomId,
-            username: data.username,
-            userEmail: data.userEmail, // <--- Indispensable pour savoir qui supprime
-            avatar: data.avatar,
-            text: data.text
-        });
-        const savedMsg = await newMsg.save();
-        io.to(data.roomId).emit('receive_message', savedMsg);
+        try {
+            // On récupère les infos fraîches de l'utilisateur pour avoir ses rangs à jour
+            const author = await User.findOne({ email: data.userEmail });
+
+            const newMsg = new Message({
+                roomId: data.roomId,
+                username: data.username,
+                avatar: data.avatar,
+                text: data.text,
+                userEmail: data.userEmail,
+                // ON INJECTE LES RANGS ICI
+                games: author ? author.games : [],
+                details: author ? author.details : {}
+            });
+            
+            await newMsg.save();
+            io.to(data.roomId).emit('receive_message', newMsg);
+            
+        } catch (err) {
+            console.error("❌ Erreur message :", err);
+        }
     });
 
     // 5. CHAT (Suppression) - NOUVEAU
