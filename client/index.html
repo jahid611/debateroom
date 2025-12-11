@@ -64,7 +64,9 @@
 
         /* FEED */
         .feed-section { position:relative; overflow:hidden; background:var(--bg); }
-        .feed-scroll { height:100%; overflow-y:scroll; scroll-snap-type:y mandatory; scroll-behavior:smooth; }
+        /* Hide scrollbar on desktop for video scroll */
+        .feed-scroll { height:100%; overflow-y:scroll; scroll-snap-type:y mandatory; scroll-behavior:smooth; scrollbar-width:none; -ms-overflow-style:none; }
+        .feed-scroll::-webkit-scrollbar { display:none; }
         .video-slide { height:100%; width:100%; scroll-snap-align:start; position:relative; display:flex; align-items:center; justify-content:center; background:#000; }
         .video-container { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
         .video-container video, .video-container iframe { width:100%; height:100%; object-fit:cover; }
@@ -121,24 +123,106 @@
 
         /* MOBILE */
         .mobile-nav { display:none; }
+        /* Mobile ELO badge in top right */
+        .mobile-elo-badge { 
+            display:none; 
+            position:fixed; 
+            top:16px; 
+            right:16px; 
+            z-index:50; 
+            background:var(--accent); 
+            color:#000; 
+            padding:6px 12px; 
+            border-radius:8px; 
+            font-size:0.85rem; 
+            font-weight:700; 
+            box-shadow:0 4px 15px rgba(0,0,0,0.3);
+        }
+        .mobile-elo-popup { 
+            position:absolute; 
+            top:-30px; 
+            left:50%; 
+            transform:translateX(-50%); 
+            font-weight:bold; 
+            font-size:0.85rem; 
+            opacity:0; 
+            pointer-events:none; 
+            transition:0.5s; 
+            white-space:nowrap; 
+        }
+        .mobile-elo-popup.show { top:-35px; opacity:1; }
+        
         @media(max-width:900px) {
             .app-layout { grid-template-columns:1fr; grid-template-rows:1fr; } 
             .header, .chat-sidebar { display:none; }
+            
+            /* Show mobile ELO badge */
+            .mobile-elo-badge { 
+                display:block; 
+                position:fixed; 
+                top:16px; 
+                right:16px; 
+                z-index:50; 
+                background:var(--accent); 
+                color:#000; 
+                padding:6px 12px; 
+                border-radius:8px; 
+                font-size:0.85rem; 
+                font-weight:700; 
+                box-shadow:0 4px 15px rgba(0,0,0,0.3);
+            }
+            .mobile-elo-popup { 
+                position:absolute; 
+                top:-30px; 
+                left:50%; 
+                transform:translateX(-50%); 
+                font-weight:bold; 
+                font-size:0.85rem; 
+                opacity:0; 
+                pointer-events:none; 
+                transition:0.5s; 
+                white-space:nowrap; 
+            }
+            .mobile-elo-popup.show { top:-35px; opacity:1; }
+            
             .mobile-nav { display:block; position:fixed; bottom:0; width:100%; height:70px; background:rgba(0,0,0,0.95); backdrop-filter:blur(20px); border-top:1px solid var(--border); z-index:100; padding-bottom:env(safe-area-inset-bottom); }
             .nav-items { display:flex; justify-content:space-around; align-items:center; height:100%; max-width:400px; margin:0 auto; }
             .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--text-secondary); cursor:pointer; font-size:1.3rem; padding:8px; }
             .nav-item.active { color:var(--text); }
             .nav-item span { font-size:0.65rem; font-weight:500; }
             .nav-create { width:48px; height:36px; background:linear-gradient(135deg,var(--accent) 0%,#f0d77c 100%); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#000; font-size:1.2rem; }
-            .feed-section { height:100%; padding-bottom:70px; } 
-            .video-info { right:70px; padding-bottom:20px; } 
-            .side-actions { bottom:90px; }
+            .feed-section { height:100%; padding-bottom:70px; }
+            
+            /* Remove gradient on mobile video info */
+            .video-info { 
+                right:60px; 
+                padding:16px; 
+                padding-top:20px;
+                background:none; 
+            }
+            
+            /* Smaller action buttons on mobile */
+            .side-actions { bottom:100px; right:10px; gap:12px; }
+            .action-circle { width:40px; height:40px; font-size:1rem; }
+            .action-count { font-size:0.65rem; }
+            
+            /* Fix mobile chat messages visibility */
             .mobile-chat { position:fixed; bottom:0; width:100%; height:75vh; background:var(--surface); border-radius:24px 24px 0 0; z-index:200; transform:translateY(100%); transition:0.3s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; }
             .mobile-chat.open { transform:translateY(0); }
+            .mobile-chat .chat-messages { 
+                flex:1; 
+                overflow-y:auto; 
+                padding:16px; 
+                display:flex; 
+                flex-direction:column; 
+                gap:14px; 
+                min-height:0;
+            }
             .mobile-chat-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:199; opacity:0; visibility:hidden; transition:0.3s; }
             .mobile-chat-overlay.open { opacity:1; visibility:visible; }
-            .mobile-chat-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+            .mobile-chat-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
             .mobile-chat-header h3 { font-size:1rem; font-weight:700; }
+            .mobile-chat .chat-input-area { flex-shrink:0; padding-bottom:env(safe-area-inset-bottom,16px); }
         }
 
         /* MODAL */
@@ -154,6 +238,12 @@
     </style>
 </head>
 <body>
+
+<!-- Mobile ELO badge in top right corner -->
+<div class="mobile-elo-badge" id="mobileEloBadge">
+    <span id="mobileEloValue">1000</span>
+    <div class="mobile-elo-popup" id="mobileEloPopup">+10</div>
+</div>
 
 <div class="app-layout" id="appLayout">
     <header class="header">
@@ -280,6 +370,7 @@
     document.getElementById('headerName').innerText = user.given_name;
     document.getElementById('headerAvatar').style.backgroundImage = `url('${user.picture || "https://cdn-icons-png.flaticon.com/512/847/847969.png"}')`;
     document.getElementById('headerElo').innerText = user.elo || 1000;
+    document.getElementById('mobileEloValue').innerText = user.elo || 1000;
 
     // ==========================================
     // SOCKET.IO CONNECTION
@@ -482,9 +573,12 @@
     // ELO UPDATE ANIMATION
     // ==========================================
     socket.on('update_user_elo', (data) => {
-        console.log("📈 ELO Update:", data.elo);
+        console.log("ELO Update:", data.elo);
         const badge = document.getElementById('headerElo');
         const popup = document.getElementById('eloPopup');
+        const mobileBadge = document.getElementById('mobileEloValue');
+        const mobilePopup = document.getElementById('mobileEloPopup');
+        const mobileContainer = document.getElementById('mobileEloBadge');
         
         if (badge && popup) {
             const diff = data.elo - user.elo;
@@ -502,6 +596,23 @@
                 badge.style.transform = "scale(1)";
                 badge.style.background = "var(--accent)";
                 popup.classList.remove('show');
+            }, 1500);
+        }
+        
+        if (mobileBadge && mobilePopup && mobileContainer) {
+            const diff = data.elo - user.elo;
+            
+            mobilePopup.innerText = diff > 0 ? `+${diff}` : diff;
+            mobilePopup.className = `mobile-elo-popup show ${diff > 0 ? 'elo-gain' : 'elo-loss'}`;
+            
+            mobileBadge.innerText = data.elo;
+            mobileContainer.style.background = diff > 0 ? "#00d26a" : "#ff4757";
+            mobileContainer.style.transform = "scale(1.2)";
+
+            setTimeout(() => {
+                mobileContainer.style.background = "var(--accent)";
+                mobileContainer.style.transform = "scale(1)";
+                mobilePopup.classList.remove('show');
             }, 1500);
         }
         
@@ -560,9 +671,11 @@
             ? `<i class="fa-solid fa-trash msg-delete" onclick="deleteMsg('${msg._id}','${msg.roomId}')"></i>` 
             : '';
 
+        const avatarUrl = msg.avatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+
         div.innerHTML = `
             <div class="msg-header">
-                <div class="msg-avatar" style="background-image:url('${msg.avatar}')"></div>
+                <div class="msg-avatar" style="background-image:url('${avatarUrl}')"></div>
                 <span class="msg-author">${msg.username}</span>
                 ${badgesHTML}
                 ${deleteBtn}
@@ -577,11 +690,14 @@
             const deskList = document.getElementById('desktopChatMessages');
             const mobileList = document.getElementById('mobileChatMessages');
             
+            // Add message to desktop chat if it's the current room
             if (deskList && deskList.dataset.room === msg.roomId) {
                 addMessageToUI(deskList, msg, false);
                 deskList.scrollTop = deskList.scrollHeight;
             }
-            if (mobileList && document.getElementById('mobileChat').classList.contains('open')) {
+            
+            // Add message to mobile chat if it's open and the current room
+            if (mobileList && document.getElementById('mobileChat').classList.contains('open') && currentRoomId === msg.roomId) {
                 addMessageToUI(mobileList, msg, false);
                 mobileList.scrollTop = mobileList.scrollHeight;
             }
@@ -595,7 +711,8 @@
                 roomId: currentRoomId,
                 username: user.given_name,
                 userEmail: user.email,
-                text: input.value
+                text: input.value,
+                avatar: user.picture || user.avatar // Use picture from auth or fallback
             });
             input.value = '';
         }
@@ -608,7 +725,8 @@
                 roomId: currentRoomId,
                 username: user.given_name,
                 userEmail: user.email,
-                text: input.value
+                text: input.value,
+                avatar: user.picture || user.avatar // Use picture from auth or fallback
             });
             input.value = '';
         }
@@ -628,7 +746,10 @@
     };
 
     socket.on('message_deleted', (messageId) => {
-        document.getElementById(`msg-${messageId}`)?.remove();
+        const msgElement = document.getElementById(`msg-${messageId}`);
+        if (msgElement) {
+            msgElement.remove();
+        }
     });
 
     // ==========================================
@@ -655,7 +776,17 @@
         currentRoomId = roomId;
         document.getElementById('mobileChat').classList.add('open');
         document.getElementById('mobileChatOverlay').classList.add('open');
-        document.getElementById('mobileChatMessages').innerHTML = '';
+        
+        // Populate mobile chat with current messages
+        const mobileList = document.getElementById('mobileChatMessages');
+        mobileList.innerHTML = ''; // Clear previous messages
+        if (currentChatMessages && currentChatMessages.length > 0) {
+            currentChatMessages.forEach(msg => addMessageToUI(mobileList, msg, false));
+            mobileList.scrollTop = mobileList.scrollHeight;
+        } else {
+            mobileList.innerHTML = '<div class="msg-system">Aucun message</div>';
+        }
+        
         socket.emit('join_room', { roomId, userEmail: user.email });
     };
 
@@ -715,20 +846,35 @@
                 videoSrc = data.src;
             } else {
                 const file = document.getElementById('videoFileInput').files[0];
+                if (!file) throw new Error("Veuillez sélectionner un fichier vidéo.");
+
                 const formData = new FormData();
                 formData.append('videoFile', file);
+                
+                // Indicate progress
+                const uploadProgressElement = document.createElement('div');
+                uploadProgressElement.innerText = 'Téléchargement... 0%';
+                uploadProgressElement.style.fontSize = '0.8rem';
+                uploadProgressElement.style.color = 'var(--text-secondary)';
+                btn.parentElement.insertBefore(uploadProgressElement, btn);
+
                 const res = await fetch('https://debateroom-u1gz.onrender.com/api/video/upload', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    onUploadProgress: (progressEvent) => {
+                        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        uploadProgressElement.innerText = `Téléchargement... ${percentCompleted}%`;
+                    }
                 });
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
                 videoSrc = data.src;
+                uploadProgressElement.remove(); // Remove progress indicator
             }
 
             socket.emit('create_room', {
                 src: videoSrc,
-                title: uploadMode === 'link' ? "Lien" : "Upload",
+                title: document.getElementById('newLinkInput').value || (uploadMode === 'file' ? document.getElementById('videoFileInput').files[0].name : 'Video Upload'),
                 game: game,
                 platform: "Web",
                 userEmail: user.email
