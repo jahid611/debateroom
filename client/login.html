@@ -132,7 +132,7 @@
             if(!email || !password) return showToast("Remplis tout !", "error");
 
             try {
-                const res = await fetch('https://debateroom-api.onrender.com/api/auth/login', {
+                const res = await fetch('https://debateroom-u1gz.onrender.com/api/auth/login', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
@@ -145,7 +145,7 @@
         async function handleGoogleLogin(response) {
             const payload = JSON.parse(atob(response.credential.split('.')[1]));
             try {
-                const res = await fetch('https://debateroom-api.onrender.com/api/auth/google', {
+                const res = await fetch('https://debateroom-u1gz.onrender.com/api/auth/google', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: payload.email, token: response.credential })
                 });

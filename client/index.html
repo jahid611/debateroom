@@ -131,11 +131,11 @@
         document.getElementById('headName').innerText = user.given_name;
         document.getElementById('headAvatar').style.backgroundImage = `url('${user.picture || "https://cdn-icons-png.flaticon.com/512/847/847969.png"}')`;
 
-        const socket = io("https://debateroom-api.onrender.com");
+        const socket = io("https://debateroom-u1gz.onrender.com");
         
         async function loadFeed() {
             try {
-                const res = await fetch('https://debateroom-api.onrender.com/api/feed/foryou?email='+user.email);
+                const res = await fetch('https://debateroom-u1gz.onrender.com/api/feed/foryou?email='+user.email);
                 const rooms = await res.json();
                 const container = document.getElementById('feedContainer');
                 container.innerHTML = '';
@@ -247,7 +247,7 @@
             const game = document.getElementById('newGame').value;
             if(!url) return alert('Lien requis');
             try {
-                const res = await fetch(`https://debateroom-api.onrender.com/api/video/resolve?url=${encodeURIComponent(url)}`);
+                const res = await fetch(`https://debateroom-u1gz.onrender.com/api/video/resolve?url=${encodeURIComponent(url)}`);
                 const data = await res.json();
                 socket.emit('create_room', { src:data.src, title:"Débat User", game, platform:"Import" });
                 closeModal();

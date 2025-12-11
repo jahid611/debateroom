@@ -147,7 +147,7 @@
 
             try {
                 // Appel API Backend
-                const res = await fetch(`https://debateroom-api.onrender.com/api/feed/foryou?email=${user.email}`);
+                const res = await fetch(`https://debateroom-u1gz.onrender.com/api/feed/foryou?email=${user.email}`);
                 const rooms = await res.json();
 
                 const container = document.getElementById('feedContainer');
