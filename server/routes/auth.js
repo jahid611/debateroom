@@ -118,4 +118,48 @@ router.post('/onboarding', async (req, res) => {
     }
 });
 
+// MISE À JOUR PROFIL
+// MISE À JOUR PROFIL COMPLETE (AVEC LOGS)
+router.put('/update', async (req, res) => {
+    console.log("📝 Update demandé pour :", req.body.email);
+    
+    try {
+        const { email, prenom, nom, pseudo, bio, avatar, games, details, newPassword, currentPassword } = req.body;
+        
+        let user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: "Utilisateur introuvable" });
+
+        // 1. Mise à jour de l'AVATAR (L'URL Cloudinary arrive ici)
+        if (avatar) {
+            console.log("📸 Nouvel avatar sauvegardé :", avatar);
+            user.avatar = avatar; 
+        }
+
+        // 2. Autres infos
+        if (pseudo) user.pseudo = pseudo;
+        if (bio !== undefined) user.bio = bio;
+        if (prenom && nom) user.name = `${prenom} ${nom}`;
+        if (games) user.games = games;
+        if (details) user.details = details;
+
+        // 3. Password
+        if (newPassword) {
+            if (user.password && user.password !== currentPassword) {
+                return res.status(403).json({ error: "Mot de passe actuel incorrect" });
+            }
+            user.password = newPassword;
+        }
+
+        await user.save(); // C'EST ICI QUE ÇA PART DANS MONGO
+        
+        const userObj = user.toObject();
+        delete userObj.password;
+        res.json({ success: true, user: userObj });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+});
+
 module.exports = router;

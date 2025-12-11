@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DebateRoom | Profil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #09090b;
+            --bg-elevated: #18181b;
+            --card: #1c1c21;
+            --card-hover: #232329;
+            --accent: #d4af37;
+            --accent-glow: rgba(212, 175, 55, 0.15);
+            --accent-soft: rgba(212, 175, 55, 0.08);
+            --text: #fafafa;
+            --text-muted: #a1a1aa;
+            --text-dim: #71717a;
+            --border: rgba(255,255,255,0.06);
+            --border-accent: rgba(212, 175, 55, 0.3);
+            --danger: #ef4444;
+            --danger-soft: rgba(239, 68, 68, 0.1);
+            --success: #22c55e;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .bg-gradient {
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, var(--accent-glow), transparent),
+                radial-gradient(ellipse 60% 40% at 100% 0%, rgba(212, 175, 55, 0.05), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 72px;
+            background: rgba(9, 9, 11, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            z-index: 100;
+        }
+
+        .header-back {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 10px 16px;
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+        }
+
+        .header-back:hover { color: var(--text); background: var(--card); }
+        .header-back i { font-size: 0.85rem; }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .logo span {
+            background: linear-gradient(135deg, var(--accent) 0%, #f5d98a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .main {
+            position: relative;
+            z-index: 1;
+            padding: 120px 24px 80px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .page-header { text-align: center; margin-bottom: 48px; }
+
+        .page-header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2rem, 5vw, 2.8rem);
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 12px;
+        }
+
+        .page-header h1 span {
+            background: linear-gradient(135deg, var(--accent) 0%, #f5d98a 50%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header p { color: var(--text-muted); font-size: 1.05rem; }
+
+        /* Tabs navigation */
+        .profile-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            background: var(--card);
+            padding: 6px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+        }
+
+        .profile-tab {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .profile-tab:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+
+        .profile-tab.active {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .profile-tab i { font-size: 1rem; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Avatar Section */
+        .avatar-card {
+            background: linear-gradient(135deg, var(--card) 0%, var(--bg-elevated) 100%);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .avatar-wrapper {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .avatar-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent) 0%, #f5d98a 50%, var(--accent) 100%);
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+
+        .avatar-wrapper:hover .avatar-ring {
+            inset: -6px;
+            opacity: 1;
+            box-shadow: 0 0 40px var(--accent-glow);
+        }
+
+        .avatar-inner {
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            background: var(--bg);
+            overflow: hidden;
+        }
+
+        .avatar-inner img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+        .avatar-wrapper:hover .avatar-inner img { transform: scale(1.05); }
+
+        .avatar-overlay {
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .avatar-wrapper:hover .avatar-overlay { opacity: 1; }
+        .avatar-overlay i { font-size: 1.5rem; color: var(--accent); }
+        .avatar-overlay span { font-size: 0.75rem; color: var(--text); font-weight: 500; }
+
+        .avatar-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent-soft);
+            border: 1px solid var(--border-accent);
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .avatar-badge i { font-size: 0.75rem; }
+
+        /* Section Cards */
+        .section-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 32px;
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .section-card:hover { border-color: rgba(255,255,255,0.1); }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-md);
+            background: var(--accent-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .section-header p { color: var(--text-dim); font-size: 0.85rem; margin-top: 2px; }
+
+        .section-card.danger { border-color: rgba(239, 68, 68, 0.15); }
+        .section-card.danger .section-icon { background: var(--danger-soft); color: var(--danger); }
+        .section-card.danger .section-header { border-color: rgba(239, 68, 68, 0.1); }
+
+        /* Form Elements */
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group:last-child { margin-bottom: 0; }
+
+        label { display: block; margin-bottom: 10px; color: var(--text-muted); font-size: 0.875rem; font-weight: 500; }
+
+        input, textarea, select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            color: var(--text);
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input::placeholder, textarea::placeholder { color: var(--text-dim); }
+        input:hover, textarea:hover, select:hover { border-color: rgba(255,255,255,0.15); }
+        input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+        textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 44px;
+        }
+
+        /* Games Section */
+        .games-grid { display: flex; flex-direction: column; gap: 12px; }
+
+        .game-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg);
+            padding: 16px 20px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .game-row:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.02); }
+        .game-row.active { border-color: var(--border-accent); background: var(--accent-soft); }
+
+        .game-check { display: flex; align-items: center; gap: 16px; }
+
+        .custom-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--text-dim);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .game-row.active .custom-checkbox { background: var(--accent); border-color: var(--accent); }
+        .custom-checkbox i { font-size: 0.7rem; color: var(--bg); display: none; }
+        .game-row.active .custom-checkbox i { display: block; }
+
+        .game-info { display: flex; flex-direction: column; gap: 2px; }
+        .game-name { font-weight: 600; font-size: 0.95rem; }
+        .game-subtitle { font-size: 0.8rem; color: var(--text-dim); }
+
+        .rank-select {
+            width: 140px;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            display: none;
+            background: var(--card);
+        }
+
+        .game-row.active .rank-select { display: block; }
+
+        /* Save Button */
+        .btn-save {
+            width: 100%;
+            padding: 18px 32px;
+            background: linear-gradient(135deg, var(--accent) 0%, #c9a227 100%);
+            border: none;
+            border-radius: var(--radius-lg);
+            color: #000;
+            font-weight: 700;
+            font-size: 1rem;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-save::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(212, 175, 55, 0.3); }
+        .btn-save:hover::before { transform: translateX(100%); }
+        .btn-save:active { transform: translateY(0); }
+        .btn-save:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+        /* Videos Grid for "Mes Videos" tab */
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .video-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .video-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+
+        .video-card-thumbnail {
+            position: relative;
+            width: 100%;
+            padding-top: 177.78%; /* 9:16 aspect ratio */
+            background: var(--bg);
+            overflow: hidden;
+        }
+
+        .video-card-thumbnail video,
+        .video-card-thumbnail img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-card-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
+            display: flex;
+            align-items: flex-end;
+            padding: 16px;
+        }
+
+        .video-card-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 0.8rem;
+            color: var(--text);
+        }
+
+        .video-card-stats span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .video-card-stats .valid { color: var(--success); }
+        .video-card-stats .inting { color: var(--danger); }
+
+        .video-card-info { padding: 16px; }
+
+        .video-card-game {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .video-card-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-card-date {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .empty-videos {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-videos i {
+            font-size: 3rem;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+        }
+
+        .empty-videos h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .empty-videos p { font-size: 0.9rem; }
+
+        .empty-videos .btn-create {
+            margin-top: 24px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 28px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .empty-videos .btn-create:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--accent-glow);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--success);
+            color: #000;
+            padding: 16px 28px;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 200;
+            box-shadow: 0 10px 40px rgba(34, 197, 94, 0.3);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast i { font-size: 1.1rem; }
+
+        .loading { opacity: 0.5; pointer-events: none; }
+
+        @media (max-width: 768px) {
+            .header { padding: 0 20px; }
+            .main { padding: 100px 16px 60px; }
+            .avatar-card, .section-card { padding: 24px; }
+            .section-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .profile-tabs { flex-direction: column; }
+            .videos-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        }
+
+        @media (max-width: 480px) {
+            .videos-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    <div class="bg-grid"></div>
+
+    <header class="header">
+        <a href="index.html" class="header-back">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Retour</span>
+        </a>
+        <div class="logo">DEBATE<span>ROOM</span></div>
+        <div style="width: 100px;"></div>
+    </header>
+
+    <main class="main">
+        <div class="page-header">
+            <h1>Mon <span>Profil</span></h1>
+            <p>Personnalisez votre identite et vos preferences</p>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="profile-tabs">
+            <button class="profile-tab active" onclick="switchTab('profile')">
+                <i class="fa-solid fa-user"></i>
+                Mon Profil
+            </button>
+            <button class="profile-tab" onclick="switchTab('videos')">
+                <i class="fa-solid fa-video"></i>
+                Mes Videos
+            </button>
+        </div>
+
+        <!-- Profile Tab Content -->
+        <div id="profileTab" class="tab-content active">
+            <!-- Avatar Section -->
+            <div class="avatar-card">
+                <div class="avatar-wrapper" onclick="document.getElementById('fileInput').click()">
+                    <div class="avatar-ring"></div>
+                    <div class="avatar-inner">
+                        <img id="previewAvatar" src="/placeholder.svg" alt="Avatar">
+                    </div>
+                    <div class="avatar-overlay">
+                        <i class="fa-solid fa-camera"></i>
+                        <span>Modifier</span>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="uploadAvatar()">
+                <div class="avatar-badge">
+                    <i class="fa-solid fa-sparkles"></i>
+                    Cliquez pour changer votre avatar
+                </div>
+            </div>
+
+            <!-- Identity Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                        <h2>Identite</h2>
+                        <p>Vos informations personnelles</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Prenom</label>
+                        <input type="text" id="prenom" placeholder="Votre prenom">
+                    </div>
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" id="nom" placeholder="Votre nom">
+                    </div>
+                    <div class="form-group full">
+                        <label>Pseudo (Affiche publiquement)</label>
+                        <input type="text" id="pseudo" placeholder="Votre pseudo en jeu">
+                    </div>
+                    <div class="form-group full">
+                        <label>Bio</label>
+                        <textarea id="bio" placeholder="Parlez-nous de vous, vos jeux preferes, votre style de jeu..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Games Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fa-solid fa-gamepad"></i>
+                    </div>
+                    <div>
+                        <h2>Mes Jeux & Rangs</h2>
+                        <p>Selectionnez vos jeux et indiquez votre niveau</p>
+                    </div>
+                </div>
+                <div class="games-grid" id="gamesContainer"></div>
+            </div>
+
+            <!-- Security Section -->
+            <div class="section-card danger">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h2>Securite</h2>
+                        <p>Modifiez votre mot de passe</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nouveau mot de passe</label>
+                        <input type="password" id="newPass" placeholder="Laisser vide si inchange">
+                    </div>
+                    <div class="form-group">
+                        <label>Mot de passe actuel (requis pour changer)</label>
+                        <input type="password" id="oldPass" placeholder="Votre mot de passe actuel">
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-save" onclick="saveProfile()">
+                SAUVEGARDER LES MODIFICATIONS
+            </button>
+        </div>
+
+        <!-- Videos Tab Content -->
+        <div id="videosTab" class="tab-content">
+            <div class="videos-grid" id="videosGrid">
+                <!-- Videos will be loaded dynamically -->
+            </div>
+            <div class="empty-videos" id="emptyVideos" style="display:none;">
+                <i class="fa-solid fa-video-slash"></i>
+                <h3>Aucune video publiee</h3>
+                <p>Vous n'avez pas encore publie de debat</p>
+                <a href="index.html" class="btn-create">
+                    <i class="fa-solid fa-plus"></i>
+                    Creer mon premier debat
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <div class="toast" id="toast">
+        <i class="fa-solid fa-check-circle"></i>
+        Profil mis a jour avec succes !
+    </div>
+
+    <script>
+        // AUTH & DATA
+        const rawUser = localStorage.getItem('user_profile');
+        if(!rawUser) window.location.href = 'login.html';
+        let user = JSON.parse(rawUser);
+
+        const gameData = {
+            'lol': { name: 'League of Legends', subtitle: 'MOBA', ranks: ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','Grandmaster','Challenger'] },
+            'valorant': { name: 'Valorant', subtitle: 'FPS Tactique', ranks: ['Iron','Bronze','Silver','Gold','Platinum','Diamond','Ascendant','Immortal','Radiant'] },
+            'rl': { name: 'Rocket League', subtitle: 'Sport Automobile', ranks: ['Bronze','Silver','Gold','Platinum','Diamond','Champion','Grand Champion','SSL'] },
+            'fortnite': { name: 'Fortnite', subtitle: 'Battle Royale', ranks: ['Bronze','Silver','Gold','Platinum','Diamond','Elite','Champion','Unreal'] }
+        };
+
+        // TAB SWITCHING
+        function switchTab(tab) {
+            document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            if (tab === 'profile') {
+                document.querySelector('.profile-tab:first-child').classList.add('active');
+                document.getElementById('profileTab').classList.add('active');
+            } else {
+                document.querySelector('.profile-tab:last-child').classList.add('active');
+                document.getElementById('videosTab').classList.add('active');
+                loadMyVideos();
+            }
+        }
+
+        // LOAD MY VIDEOS
+        async function loadMyVideos() {
+            const grid = document.getElementById('videosGrid');
+            const empty = document.getElementById('emptyVideos');
+            
+            grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;"><i class="fa-solid fa-spinner fa-spin" style="font-size:2rem;"></i><p style="margin-top:12px;">Chargement...</p></div>';
+            
+            try {
+                const res = await fetch(`https://debateroom-u1gz.onrender.com/api/feed/user-videos?email=${user.email}`);
+                const videos = await res.json();
+                
+                console.log("[v0] User videos loaded:", videos);
+                
+                if (!videos || videos.length === 0) {
+                    grid.innerHTML = '';
+                    empty.style.display = 'block';
+                    return;
+                }
+                
+                empty.style.display = 'none';
+                grid.innerHTML = '';
+                
+                videos.forEach(video => {
+                    const validCount = video.votes?.valid?.length || 0;
+                    const intingCount = video.votes?.inting?.length || 0;
+                    const date = new Date(video.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                    
+                    const card = document.createElement('div');
+                    card.className = 'video-card';
+                    card.onclick = () => window.location.href = `index.html?room=${video.slug}`;
+                    
+                    // Determine thumbnail - use video element for mp4, placeholder for embeds
+                    let thumbnailHTML = '';
+                    if (video.videoUrl.includes('youtube.com') || video.videoUrl.includes('tiktok.com')) {
+                        thumbnailHTML = `<img src="/placeholder.svg?height=400&width=225" alt="thumbnail">`;
+                    } else {
+                        thumbnailHTML = `<video src="${video.videoUrl}" muted></video>`;
+                    }
+                    
+                    card.innerHTML = `
+                        <div class="video-card-thumbnail">
+                            ${thumbnailHTML}
+                            <div class="video-card-overlay">
+                                <div class="video-card-stats">
+                                    <span class="valid"><i class="fa-solid fa-check"></i> ${validCount}</span>
+                                    <span class="inting"><i class="fa-solid fa-xmark"></i> ${intingCount}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="video-card-info">
+                            <span class="video-card-game"><i class="fa-solid fa-gamepad"></i> ${video.game}</span>
+                            <h4 class="video-card-title">${video.videoTitle}</h4>
+                            <p class="video-card-date">${date}</p>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch(e) {
+                console.error("[v0] Error loading videos:", e);
+                grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger);grid-column:1/-1;">Erreur de chargement</div>';
+            }
+        }
+
+        // INIT PROFILE
+        function init() {
+            document.getElementById('previewAvatar').src = user.picture || user.avatar || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+            
+            const fullName = user.name || "";
+            const parts = fullName.split(' ');
+            document.getElementById('prenom').value = parts[0] || "";
+            document.getElementById('nom').value = parts.slice(1).join(' ') || "";
+            document.getElementById('pseudo').value = user.given_name || user.pseudo || "";
+            document.getElementById('bio').value = user.bio || "";
+
+            renderGamesUI(user.games || [], user.details || {});
+        }
+
+        function renderGamesUI(userGames, userDetails) {
+            const container = document.getElementById('gamesContainer');
+            container.innerHTML = '';
+            for (const [key, data] of Object.entries(gameData)) {
+                const isActive = userGames.includes(key);
+                const userRank = (userDetails[key] && userDetails[key].rank) ? userDetails[key].rank : "Unranked";
+                
+                const row = document.createElement('div');
+                row.className = `game-row ${isActive ? 'active' : ''}`;
+                row.id = `game-${key}`;
+                row.onclick = (e) => { if(e.target.tagName !== 'SELECT') toggleGame(key); };
+
+                let options = `<option value="Unranked" ${userRank === 'Unranked' ? 'selected' : ''}>Unranked</option>`;
+                data.ranks.forEach(r => {
+                    options += `<option value="${r}" ${userRank === r ? 'selected' : ''}>${r}</option>`;
+                });
+
+                row.innerHTML = `
+                    <div class="game-check">
+                        <div class="custom-checkbox"><i class="fa-solid fa-check"></i></div>
+                        <div class="game-info">
+                            <span class="game-name">${data.name}</span>
+                            <span class="game-subtitle">${data.subtitle}</span>
+                        </div>
+                    </div>
+                    <select class="rank-select" id="rank-${key}" onclick="event.stopPropagation()">${options}</select>
+                `;
+                container.appendChild(row);
+            }
+        }
+
+        function toggleGame(key) {
+            const row = document.getElementById(`game-${key}`);
+            row.classList.toggle('active');
+        }
+
+        // UPLOAD AVATAR
+        let newAvatarUrl = null;
+        async function uploadAvatar() {
+            const file = document.getElementById('fileInput').files[0];
+            if(!file) return;
+            
+            const fd = new FormData();
+            fd.append('videoFile', file);
+
+            try {
+                document.querySelector('.avatar-wrapper').classList.add('loading');
+                const res = await fetch('https://debateroom-u1gz.onrender.com/api/video/upload', {
+                    method: 'POST', body: fd
+                });
+                const data = await res.json();
+                if(data.src) {
+                    newAvatarUrl = data.src;
+                    document.getElementById('previewAvatar').src = newAvatarUrl;
+                } else {
+                    alert("Erreur lors de l'upload de l'image.");
+                }
+            } catch(e) { 
+                alert("Erreur de connexion pour l'upload.");
+            }
+            finally { document.querySelector('.avatar-wrapper').classList.remove('loading'); }
+        }
+
+        // SAVE PROFILE
+        async function saveProfile() {
+            const btn = document.querySelector('.btn-save');
+            btn.innerText = "Sauvegarde en cours..."; btn.disabled = true;
+
+            const activeGames = [];
+            const details = {};
+            document.querySelectorAll('.game-row.active').forEach(row => {
+                const key = row.id.replace('game-', '');
+                activeGames.push(key);
+                details[key] = { rank: document.getElementById(`rank-${key}`).value };
+            });
+
+            const payload = {
+                email: user.email,
+                prenom: document.getElementById('prenom').value,
+                nom: document.getElementById('nom').value,
+                pseudo: document.getElementById('pseudo').value,
+                bio: document.getElementById('bio').value,
+                currentPassword: document.getElementById('oldPass').value,
+                newPassword: document.getElementById('newPass').value,
+                games: activeGames,
+                details: details
+            };
+
+            if(newAvatarUrl) {
+                payload.avatar = newAvatarUrl;
+            }
+
+            try {
+                const res = await fetch('https://debateroom-u1gz.onrender.com/api/auth/update', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if(res.ok) {
+                    user.name = data.user.name;
+                    user.given_name = data.user.pseudo;
+                    user.pseudo = data.user.pseudo;
+                    user.picture = data.user.avatar;
+                    user.avatar = data.user.avatar;
+                    user.bio = data.user.bio;
+                    user.games = data.user.games;
+                    user.details = data.user.details;
+                    localStorage.setItem('user_profile', JSON.stringify(user));
+
+                    const t = document.getElementById('toast');
+                    t.classList.add('show');
+                    setTimeout(() => t.classList.remove('show'), 3000);
+                } else {
+                    alert("Erreur: " + data.error);
+                }
+            } catch(e) { 
+                alert("Erreur serveur"); 
+            }
+            
+            btn.innerText = "SAUVEGARDER LES MODIFICATIONS"; btn.disabled = false;
+        }
+
+        init();
+    </script>
+</body>
+</html>
