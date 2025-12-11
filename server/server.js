@@ -73,19 +73,63 @@ io.on('connection', (socket) => {
     });
 
     // 3. VOTES
+    // 3. VOTE & ELO SYSTEM
     socket.on('send_vote', async (data) => {
         const { roomId, choice, userId } = data;
+        
+        // On récupère la Room et l'User
         const room = await Room.findOne({ slug: roomId });
-        if (!room || !userId) return;
+        const user = await User.findOne({ email: userId });
+
+        if (!room || !user) return;
 
         if(!room.votes) room.votes = { valid: [], inting: [] };
+        if(!room.votes.valid) room.votes.valid = [];
+        if(!room.votes.inting) room.votes.inting = [];
+
+        // Gestion du changement de vote
+        const otherChoice = choice === 'valid' ? 'inting' : 'valid';
+        if (room.votes[otherChoice].includes(userId)) {
+            room.votes[otherChoice] = room.votes[otherChoice].filter(id => id !== userId);
+        }
+
+        // Ajout du vote s'il n'y est pas déjà
+        if (!room.votes[choice].includes(userId)) {
+            room.votes[choice].push(userId);
+        }
+
+        // --- CALCUL ELO (GAMIFICATION) ---
+        const countValid = room.votes.valid.length;
+        const countInting = room.votes.inting.length;
         
-        const other = choice === 'valid' ? 'inting' : 'valid';
-        if (room.votes[other].includes(userId)) room.votes[other] = room.votes[other].filter(id => id !== userId);
-        if (!room.votes[choice].includes(userId)) room.votes[choice].push(userId);
+        // Quelle est la majorité actuelle ?
+        let majority = null;
+        if (countValid > countInting) majority = 'valid';
+        else if (countInting > countValid) majority = 'inting';
+
+        // Si l'utilisateur rejoint la majorité -> Gain de points
+        // Si l'utilisateur va contre la majorité -> Perte de points
+        // (On ne change le score que si une majorité claire existe)
+        if (majority) {
+            if (choice === majority) {
+                user.elo = (user.elo || 1000) + 10; // +10 points pour le bon choix
+            } else {
+                user.elo = (user.elo || 1000) - 5;  // -5 points pour le mauvais choix
+            }
+            await user.save();
+            
+            // On renvoie le nouveau score au client pour l'afficher en direct
+            socket.emit('update_user_elo', { elo: user.elo });
+        }
 
         await room.save();
-        io.to(roomId).emit('update_votes', { roomId, valid: room.votes.valid.length, inting: room.votes.inting.length });
+
+        // Update des votes pour tout le monde
+        io.to(roomId).emit('update_votes', { 
+            roomId: roomId,
+            valid: room.votes.valid.length, 
+            inting: room.votes.inting.length 
+        });
     });
 
     // 4. CHAT (CORRIGÉ POUR L'AVATAR)

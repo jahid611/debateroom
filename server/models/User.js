@@ -7,10 +7,13 @@ const UserSchema = new mongoose.Schema({
     
     pseudo: { type: String },
     name: { type: String },
-    bio: { type: String, default: "" }, // <--- NOUVEAU
+    bio: { type: String, default: "" },
     age: { type: Number },
     avatar: { type: String, default: "https://cdn-icons-png.flaticon.com/512/847/847969.png" },
     
+    // NOUVEAU : Le Score de Juge
+    elo: { type: Number, default: 1000 },
+
     games: [String],
     details: { type: Object },
     

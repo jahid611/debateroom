@@ -890,10 +890,12 @@
             </button>
             <div class="user-menu">
                 <div class="user-trigger" onclick="toggleUserMenu()">
-                    <div class="user-avatar" id="headerAvatar"></div>
-                    <span class="user-name" id="headerName">...</span>
-                    <i class="fa-solid fa-chevron-down user-chevron"></i>
-                </div>
+    <span id="headerElo" style="background:var(--accent); color:#000; padding:2px 8px; border-radius:6px; font-size:0.8rem; font-weight:700; margin-right:8px;">1000</span>
+    
+    <div class="user-avatar" id="headerAvatar"></div>
+    <span class="user-name" id="headerName">...</span>
+    <i class="fa-solid fa-chevron-down user-chevron"></i>
+</div>
                 <div class="dropdown-menu" id="userDropdown">
                     <div class="dropdown-item" onclick="location.href='editprofile.html'">
                         <i class="fa-solid fa-user-pen"></i> Mon Profil
@@ -1036,6 +1038,37 @@
     const urlParams = new URLSearchParams(window.location.search);
     const startRoom = urlParams.get('room');
 
+    // 1. INIT ELO
+        const currentElo = user.elo || 1000;
+        const eloBadge = document.getElementById('userElo');
+        if(eloBadge) eloBadge.innerText = currentElo;
+
+        // 2. ÉCOUTEUR MIS À JOUR ELO
+        socket.on('update_user_elo', (data) => {
+            console.log("📈 Nouveau score ELO :", data.elo);
+            
+            // Mise à jour visuelle
+            if(eloBadge) {
+                // Animation Flash
+                eloBadge.style.transform = "scale(1.5)";
+                eloBadge.style.transition = "0.3s";
+                eloBadge.innerText = data.elo;
+                
+                // Couleur selon gain/perte
+                if(data.elo > user.elo) eloBadge.style.background = "#2ecc71"; // Vert
+                else eloBadge.style.background = "#e74c3c"; // Rouge
+
+                setTimeout(() => {
+                    eloBadge.style.transform = "scale(1)";
+                    eloBadge.style.background = "var(--accent)"; // Retour au doré
+                }, 500);
+            }
+
+            // Sauvegarde locale
+            user.elo = data.elo;
+            localStorage.setItem('user_profile', JSON.stringify(user));
+        });
+
     // VIDEO PLAYER HELPER
     function getPlayerHTML(room) {
         if (room.videoUrl.includes('youtube.com/embed')) {
@@ -1046,6 +1079,8 @@
         }
         return `<video src="${room.videoUrl}" loop playsinline muted autoplay></video>`;
     }
+
+    
 
     // LOAD FEED
     async function loadFeed() {
@@ -1154,27 +1189,36 @@
         const canDelete = (msg.userEmail === user.email) || isOwner;
         const deleteBtn = canDelete ? `<i class="fa-solid fa-trash msg-delete" onclick="deleteMessage('${msg._id}', '${msg.roomId}')"></i>` : '';
 
+        // LOGIQUE BADGES (Nouvelle version)
         let badgesHTML = '';
         if (msg.games && msg.games.length > 0 && msg.details) {
             const mainGame = msg.games[0];
             const mainRank = msg.details[mainGame]?.rank || 'Unranked';
+            
+            // Map des noms courts pour l'affichage
+            const gameNames = { 'lol': 'LoL', 'valorant': 'Valo', 'fortnite': 'Fort', 'rl': 'RL' };
+            const displayName = gameNames[mainGame] || mainGame;
+
             let popupContent = '';
             msg.games.forEach(g => {
                 const r = msg.details[g]?.rank || '-';
-                const names = { 'lol': 'LoL', 'valorant': 'Valo', 'fortnite': 'Fort', 'rl': 'RL' };
-                popupContent += `<div class="badge-row"><span>${names[g] || g}</span><span class="rank">${r}</span></div>`;
+                popupContent += `<div class="badge-row"><span>${gameNames[g] || g}</span><span class="rank">${r}</span></div>`;
             });
+            
             badgesHTML = `
                 <div class="msg-badges">
-                    <div class="badge-main">${mainGame} • ${mainRank} ${msg.games.length > 1 ? '+' : ''}</div>
+                    <div class="badge-main">${displayName} • ${mainRank} ${msg.games.length > 1 ? '+' : ''}</div>
                     <div class="badge-popup">${popupContent}</div>
                 </div>
             `;
         }
 
+        // Avatar par défaut si manquant
+        const avatarUrl = msg.avatar || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+
         div.innerHTML = `
             <div class="msg-header">
-                <div class="msg-avatar" style="background-image:url('${msg.avatar || "https://cdn-icons-png.flaticon.com/512/847/847969.png"}')"></div>
+                <div class="msg-avatar" style="background-image:url('${avatarUrl}')"></div>
                 <span class="msg-author">${msg.username}</span>
                 ${badgesHTML}
                 ${deleteBtn}
@@ -1231,6 +1275,33 @@
     });
 
     socket.on('room_created', () => window.location.reload());
+
+    // ELO UPDATE
+    socket.on('update_user_elo', (data) => {
+        console.log("📈 ELO Update:", data.elo);
+        const eloBadge = document.getElementById('headerElo');
+        
+        if(eloBadge) {
+            // Animation simple
+            eloBadge.style.transform = "scale(1.2)";
+            eloBadge.style.transition = "0.2s";
+            
+            // Couleur temporaire
+            if (data.elo > user.elo) eloBadge.style.color = "#00d26a"; // Vert
+            else eloBadge.style.color = "#ff4757"; // Rouge
+            
+            eloBadge.innerText = data.elo;
+
+            setTimeout(() => {
+                eloBadge.style.transform = "scale(1)";
+                eloBadge.style.color = "#000"; // Retour couleur normale
+            }, 500);
+        }
+
+        // Sauvegarde locale
+        user.elo = data.elo;
+        localStorage.setItem('user_profile', JSON.stringify(user));
+    });
 
     // SEND MESSAGES
     function sendDesktopMessage() {
