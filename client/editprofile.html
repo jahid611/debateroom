@@ -30,12 +30,7 @@
             --radius-xl: 24px;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg);
@@ -45,7 +40,6 @@
             overflow-x: hidden;
         }
 
-        /* Background Effects */
         .bg-gradient {
             position: fixed;
             inset: 0;
@@ -67,7 +61,6 @@
             z-index: 0;
         }
 
-        /* Header */
         .header {
             position: fixed;
             top: 0;
@@ -97,14 +90,8 @@
             transition: all 0.2s ease;
         }
 
-        .header-back:hover {
-            color: var(--text);
-            background: var(--card);
-        }
-
-        .header-back i {
-            font-size: 0.85rem;
-        }
+        .header-back:hover { color: var(--text); background: var(--card); }
+        .header-back i { font-size: 0.85rem; }
 
         .logo {
             font-family: 'Space Grotesk', sans-serif;
@@ -120,7 +107,6 @@
             background-clip: text;
         }
 
-        /* Main Container */
         .main {
             position: relative;
             z-index: 1;
@@ -129,11 +115,7 @@
             margin: 0 auto;
         }
 
-        /* Page Title */
-        .page-header {
-            text-align: center;
-            margin-bottom: 48px;
-        }
+        .page-header { text-align: center; margin-bottom: 48px; }
 
         .page-header h1 {
             font-family: 'Space Grotesk', sans-serif;
@@ -150,9 +132,51 @@
             background-clip: text;
         }
 
-        .page-header p {
+        .page-header p { color: var(--text-muted); font-size: 1.05rem; }
+
+        /* Tabs navigation */
+        .profile-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            background: var(--card);
+            padding: 6px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+        }
+
+        .profile-tab {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            background: transparent;
             color: var(--text-muted);
-            font-size: 1.05rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .profile-tab:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+
+        .profile-tab.active {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .profile-tab i { font-size: 1rem; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Avatar Section */
@@ -213,16 +237,8 @@
             overflow: hidden;
         }
 
-        .avatar-inner img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-
-        .avatar-wrapper:hover .avatar-inner img {
-            transform: scale(1.05);
-        }
+        .avatar-inner img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+        .avatar-wrapper:hover .avatar-inner img { transform: scale(1.05); }
 
         .avatar-overlay {
             position: absolute;
@@ -238,20 +254,9 @@
             transition: all 0.3s ease;
         }
 
-        .avatar-wrapper:hover .avatar-overlay {
-            opacity: 1;
-        }
-
-        .avatar-overlay i {
-            font-size: 1.5rem;
-            color: var(--accent);
-        }
-
-        .avatar-overlay span {
-            font-size: 0.75rem;
-            color: var(--text);
-            font-weight: 500;
-        }
+        .avatar-wrapper:hover .avatar-overlay { opacity: 1; }
+        .avatar-overlay i { font-size: 1.5rem; color: var(--accent); }
+        .avatar-overlay span { font-size: 0.75rem; color: var(--text); font-weight: 500; }
 
         .avatar-badge {
             display: inline-flex;
@@ -266,9 +271,7 @@
             font-weight: 500;
         }
 
-        .avatar-badge i {
-            font-size: 0.75rem;
-        }
+        .avatar-badge i { font-size: 0.75rem; }
 
         /* Section Cards */
         .section-card {
@@ -280,9 +283,7 @@
             transition: all 0.3s ease;
         }
 
-        .section-card:hover {
-            border-color: rgba(255,255,255,0.1);
-        }
+        .section-card:hover { border-color: rgba(255,255,255,0.1); }
 
         .section-header {
             display: flex;
@@ -312,56 +313,21 @@
             letter-spacing: -0.3px;
         }
 
-        .section-header p {
-            color: var(--text-dim);
-            font-size: 0.85rem;
-            margin-top: 2px;
-        }
+        .section-header p { color: var(--text-dim); font-size: 0.85rem; margin-top: 2px; }
 
-        /* Security section variant */
-        .section-card.danger {
-            border-color: rgba(239, 68, 68, 0.15);
-        }
-
-        .section-card.danger .section-icon {
-            background: var(--danger-soft);
-            color: var(--danger);
-        }
-
-        .section-card.danger .section-header {
-            border-color: rgba(239, 68, 68, 0.1);
-        }
+        .section-card.danger { border-color: rgba(239, 68, 68, 0.15); }
+        .section-card.danger .section-icon { background: var(--danger-soft); color: var(--danger); }
+        .section-card.danger .section-header { border-color: rgba(239, 68, 68, 0.1); }
 
         /* Form Elements */
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
 
-        @media (max-width: 600px) {
-            .form-grid { grid-template-columns: 1fr; }
-        }
+        .form-group { margin-bottom: 20px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group:last-child { margin-bottom: 0; }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group.full {
-            grid-column: 1 / -1;
-        }
-
-        .form-group:last-child {
-            margin-bottom: 0;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 10px;
-            color: var(--text-muted);
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
+        label { display: block; margin-bottom: 10px; color: var(--text-muted); font-size: 0.875rem; font-weight: 500; }
 
         input, textarea, select {
             width: 100%;
@@ -376,24 +342,11 @@
             transition: all 0.2s ease;
         }
 
-        input::placeholder, textarea::placeholder {
-            color: var(--text-dim);
-        }
+        input::placeholder, textarea::placeholder { color: var(--text-dim); }
+        input:hover, textarea:hover, select:hover { border-color: rgba(255,255,255,0.15); }
+        input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
-        input:hover, textarea:hover, select:hover {
-            border-color: rgba(255,255,255,0.15);
-        }
-
-        input:focus, textarea:focus, select:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-soft);
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 120px;
-            line-height: 1.6;
-        }
+        textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
 
         select {
             cursor: pointer;
@@ -405,11 +358,7 @@
         }
 
         /* Games Section */
-        .games-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
+        .games-grid { display: flex; flex-direction: column; gap: 12px; }
 
         .game-row {
             display: flex;
@@ -423,21 +372,10 @@
             transition: all 0.2s ease;
         }
 
-        .game-row:hover {
-            border-color: rgba(255,255,255,0.12);
-            background: rgba(255,255,255,0.02);
-        }
+        .game-row:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.02); }
+        .game-row.active { border-color: var(--border-accent); background: var(--accent-soft); }
 
-        .game-row.active {
-            border-color: var(--border-accent);
-            background: var(--accent-soft);
-        }
-
-        .game-check {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
+        .game-check { display: flex; align-items: center; gap: 16px; }
 
         .custom-checkbox {
             width: 22px;
@@ -451,36 +389,13 @@
             flex-shrink: 0;
         }
 
-        .game-row.active .custom-checkbox {
-            background: var(--accent);
-            border-color: var(--accent);
-        }
+        .game-row.active .custom-checkbox { background: var(--accent); border-color: var(--accent); }
+        .custom-checkbox i { font-size: 0.7rem; color: var(--bg); display: none; }
+        .game-row.active .custom-checkbox i { display: block; }
 
-        .custom-checkbox i {
-            font-size: 0.7rem;
-            color: var(--bg);
-            display: none;
-        }
-
-        .game-row.active .custom-checkbox i {
-            display: block;
-        }
-
-        .game-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .game-name {
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-
-        .game-subtitle {
-            font-size: 0.8rem;
-            color: var(--text-dim);
-        }
+        .game-info { display: flex; flex-direction: column; gap: 2px; }
+        .game-name { font-weight: 600; font-size: 0.95rem; }
+        .game-subtitle { font-size: 0.8rem; color: var(--text-dim); }
 
         .rank-select {
             width: 140px;
@@ -490,9 +405,7 @@
             background: var(--card);
         }
 
-        .game-row.active .rank-select {
-            display: block;
-        }
+        .game-row.active .rank-select { display: block; }
 
         /* Save Button */
         .btn-save {
@@ -522,23 +435,148 @@
             transition: transform 0.5s ease;
         }
 
-        .btn-save:hover {
+        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(212, 175, 55, 0.3); }
+        .btn-save:hover::before { transform: translateX(100%); }
+        .btn-save:active { transform: translateY(0); }
+        .btn-save:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+        /* Videos Grid for "Mes Videos" tab */
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .video-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .video-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+
+        .video-card-thumbnail {
+            position: relative;
+            width: 100%;
+            padding-top: 177.78%; /* 9:16 aspect ratio */
+            background: var(--bg);
+            overflow: hidden;
+        }
+
+        .video-card-thumbnail video,
+        .video-card-thumbnail img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-card-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
+            display: flex;
+            align-items: flex-end;
+            padding: 16px;
+        }
+
+        .video-card-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 0.8rem;
+            color: var(--text);
+        }
+
+        .video-card-stats span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .video-card-stats .valid { color: var(--success); }
+        .video-card-stats .inting { color: var(--danger); }
+
+        .video-card-info { padding: 16px; }
+
+        .video-card-game {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .video-card-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-card-date {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .empty-videos {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-videos i {
+            font-size: 3rem;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+        }
+
+        .empty-videos h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .empty-videos p { font-size: 0.9rem; }
+
+        .empty-videos .btn-create {
+            margin-top: 24px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 28px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .empty-videos .btn-create:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 40px rgba(212, 175, 55, 0.3);
-        }
-
-        .btn-save:hover::before {
-            transform: translateX(100%);
-        }
-
-        .btn-save:active {
-            transform: translateY(0);
-        }
-
-        .btn-save:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
+            box-shadow: 0 8px 25px var(--accent-glow);
         }
 
         /* Toast */
@@ -562,41 +600,22 @@
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast i { font-size: 1.1rem; }
 
-        .toast i {
-            font-size: 1.1rem;
-        }
+        .loading { opacity: 0.5; pointer-events: none; }
 
-        /* Loading State */
-        .loading {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .section-card, .avatar-card {
-            animation: fadeIn 0.5s ease forwards;
-        }
-
-        .section-card:nth-child(2) { animation-delay: 0.1s; }
-        .section-card:nth-child(3) { animation-delay: 0.2s; }
-        .section-card:nth-child(4) { animation-delay: 0.3s; }
-
-        /* Responsive */
         @media (max-width: 768px) {
             .header { padding: 0 20px; }
             .main { padding: 100px 16px 60px; }
             .avatar-card, .section-card { padding: 24px; }
             .section-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .profile-tabs { flex-direction: column; }
+            .videos-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        }
+
+        @media (max-width: 480px) {
+            .videos-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -619,96 +638,127 @@
             <p>Personnalisez votre identite et vos preferences</p>
         </div>
 
-        <!-- Avatar Section -->
-        <div class="avatar-card">
-            <div class="avatar-wrapper" onclick="document.getElementById('fileInput').click()">
-                <div class="avatar-ring"></div>
-                <div class="avatar-inner">
-                    <img id="previewAvatar" src="/placeholder.svg" alt="Avatar">
-                </div>
-                <div class="avatar-overlay">
-                    <i class="fa-solid fa-camera"></i>
-                    <span>Modifier</span>
-                </div>
-            </div>
-            <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="uploadAvatar()">
-            <div class="avatar-badge">
-                <i class="fa-solid fa-sparkles"></i>
-                Cliquez pour changer votre avatar
-            </div>
+        <!-- Tabs Navigation -->
+        <div class="profile-tabs">
+            <button class="profile-tab active" onclick="switchTab('profile')">
+                <i class="fa-solid fa-user"></i>
+                Mon Profil
+            </button>
+            <button class="profile-tab" onclick="switchTab('videos')">
+                <i class="fa-solid fa-video"></i>
+                Mes Videos
+            </button>
         </div>
 
-        <!-- Identity Section -->
-        <div class="section-card">
-            <div class="section-header">
-                <div class="section-icon">
-                    <i class="fa-solid fa-user"></i>
+        <!-- Profile Tab Content -->
+        <div id="profileTab" class="tab-content active">
+            <!-- Avatar Section -->
+            <div class="avatar-card">
+                <div class="avatar-wrapper" onclick="document.getElementById('fileInput').click()">
+                    <div class="avatar-ring"></div>
+                    <div class="avatar-inner">
+                        <img id="previewAvatar" src="/placeholder.svg" alt="Avatar">
+                    </div>
+                    <div class="avatar-overlay">
+                        <i class="fa-solid fa-camera"></i>
+                        <span>Modifier</span>
+                    </div>
                 </div>
-                <div>
-                    <h2>Identite</h2>
-                    <p>Vos informations personnelles</p>
-                </div>
-            </div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Prenom</label>
-                    <input type="text" id="prenom" placeholder="Votre prenom">
-                </div>
-                <div class="form-group">
-                    <label>Nom</label>
-                    <input type="text" id="nom" placeholder="Votre nom">
-                </div>
-                <div class="form-group full">
-                    <label>Pseudo (Affiche publiquement)</label>
-                    <input type="text" id="pseudo" placeholder="Votre pseudo en jeu">
-                </div>
-                <div class="form-group full">
-                    <label>Bio</label>
-                    <textarea id="bio" placeholder="Parlez-nous de vous, vos jeux preferes, votre style de jeu..."></textarea>
+                <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="uploadAvatar()">
+                <div class="avatar-badge">
+                    <i class="fa-solid fa-sparkles"></i>
+                    Cliquez pour changer votre avatar
                 </div>
             </div>
+
+            <!-- Identity Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                        <h2>Identite</h2>
+                        <p>Vos informations personnelles</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Prenom</label>
+                        <input type="text" id="prenom" placeholder="Votre prenom">
+                    </div>
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" id="nom" placeholder="Votre nom">
+                    </div>
+                    <div class="form-group full">
+                        <label>Pseudo (Affiche publiquement)</label>
+                        <input type="text" id="pseudo" placeholder="Votre pseudo en jeu">
+                    </div>
+                    <div class="form-group full">
+                        <label>Bio</label>
+                        <textarea id="bio" placeholder="Parlez-nous de vous, vos jeux preferes, votre style de jeu..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Games Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fa-solid fa-gamepad"></i>
+                    </div>
+                    <div>
+                        <h2>Mes Jeux & Rangs</h2>
+                        <p>Selectionnez vos jeux et indiquez votre niveau</p>
+                    </div>
+                </div>
+                <div class="games-grid" id="gamesContainer"></div>
+            </div>
+
+            <!-- Security Section -->
+            <div class="section-card danger">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h2>Securite</h2>
+                        <p>Modifiez votre mot de passe</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nouveau mot de passe</label>
+                        <input type="password" id="newPass" placeholder="Laisser vide si inchange">
+                    </div>
+                    <div class="form-group">
+                        <label>Mot de passe actuel (requis pour changer)</label>
+                        <input type="password" id="oldPass" placeholder="Votre mot de passe actuel">
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-save" onclick="saveProfile()">
+                SAUVEGARDER LES MODIFICATIONS
+            </button>
         </div>
 
-        <!-- Games Section -->
-        <div class="section-card">
-            <div class="section-header">
-                <div class="section-icon">
-                    <i class="fa-solid fa-gamepad"></i>
-                </div>
-                <div>
-                    <h2>Mes Jeux & Rangs</h2>
-                    <p>Selectionnez vos jeux et indiquez votre niveau</p>
-                </div>
+        <!-- Videos Tab Content -->
+        <div id="videosTab" class="tab-content">
+            <div class="videos-grid" id="videosGrid">
+                <!-- Videos will be loaded dynamically -->
             </div>
-            <div class="games-grid" id="gamesContainer"></div>
-        </div>
-
-        <!-- Security Section -->
-        <div class="section-card danger">
-            <div class="section-header">
-                <div class="section-icon">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
-                <div>
-                    <h2>Securite</h2>
-                    <p>Modifiez votre mot de passe</p>
-                </div>
-            </div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Nouveau mot de passe</label>
-                    <input type="password" id="newPass" placeholder="Laisser vide si inchange">
-                </div>
-                <div class="form-group">
-                    <label>Mot de passe actuel (requis pour changer)</label>
-                    <input type="password" id="oldPass" placeholder="Votre mot de passe actuel">
-                </div>
+            <div class="empty-videos" id="emptyVideos" style="display:none;">
+                <i class="fa-solid fa-video-slash"></i>
+                <h3>Aucune video publiee</h3>
+                <p>Vous n'avez pas encore publie de debat</p>
+                <a href="index.html" class="btn-create">
+                    <i class="fa-solid fa-plus"></i>
+                    Creer mon premier debat
+                </a>
             </div>
         </div>
-
-        <button class="btn-save" onclick="saveProfile()">
-            SAUVEGARDER LES MODIFICATIONS
-        </button>
     </main>
 
     <div class="toast" id="toast">
@@ -717,7 +767,7 @@
     </div>
 
     <script>
-        // 1. AUTH & DONNEES
+        // AUTH & DATA
         const rawUser = localStorage.getItem('user_profile');
         if(!rawUser) window.location.href = 'login.html';
         let user = JSON.parse(rawUser);
@@ -729,18 +779,93 @@
             'fortnite': { name: 'Fortnite', subtitle: 'Battle Royale', ranks: ['Bronze','Silver','Gold','Platinum','Diamond','Elite','Champion','Unreal'] }
         };
 
-        // 2. PRE-REMPLISSAGE
-        function init() {
-            console.log("---- DONNEES UTILISATEUR CHARGEES ----");
-            console.log(user);
+        // TAB SWITCHING
+        function switchTab(tab) {
+            document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            if (tab === 'profile') {
+                document.querySelector('.profile-tab:first-child').classList.add('active');
+                document.getElementById('profileTab').classList.add('active');
+            } else {
+                document.querySelector('.profile-tab:last-child').classList.add('active');
+                document.getElementById('videosTab').classList.add('active');
+                loadMyVideos();
+            }
+        }
 
-            document.getElementById('previewAvatar').src = user.picture || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+        // LOAD MY VIDEOS
+        async function loadMyVideos() {
+            const grid = document.getElementById('videosGrid');
+            const empty = document.getElementById('emptyVideos');
+            
+            grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;"><i class="fa-solid fa-spinner fa-spin" style="font-size:2rem;"></i><p style="margin-top:12px;">Chargement...</p></div>';
+            
+            try {
+                const res = await fetch(`https://debateroom-u1gz.onrender.com/api/feed/user-videos?email=${user.email}`);
+                const videos = await res.json();
+                
+                console.log("[v0] User videos loaded:", videos);
+                
+                if (!videos || videos.length === 0) {
+                    grid.innerHTML = '';
+                    empty.style.display = 'block';
+                    return;
+                }
+                
+                empty.style.display = 'none';
+                grid.innerHTML = '';
+                
+                videos.forEach(video => {
+                    const validCount = video.votes?.valid?.length || 0;
+                    const intingCount = video.votes?.inting?.length || 0;
+                    const date = new Date(video.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                    
+                    const card = document.createElement('div');
+                    card.className = 'video-card';
+                    card.onclick = () => window.location.href = `index.html?room=${video.slug}`;
+                    
+                    // Determine thumbnail - use video element for mp4, placeholder for embeds
+                    let thumbnailHTML = '';
+                    if (video.videoUrl.includes('youtube.com') || video.videoUrl.includes('tiktok.com')) {
+                        thumbnailHTML = `<img src="/placeholder.svg?height=400&width=225" alt="thumbnail">`;
+                    } else {
+                        thumbnailHTML = `<video src="${video.videoUrl}" muted></video>`;
+                    }
+                    
+                    card.innerHTML = `
+                        <div class="video-card-thumbnail">
+                            ${thumbnailHTML}
+                            <div class="video-card-overlay">
+                                <div class="video-card-stats">
+                                    <span class="valid"><i class="fa-solid fa-check"></i> ${validCount}</span>
+                                    <span class="inting"><i class="fa-solid fa-xmark"></i> ${intingCount}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="video-card-info">
+                            <span class="video-card-game"><i class="fa-solid fa-gamepad"></i> ${video.game}</span>
+                            <h4 class="video-card-title">${video.videoTitle}</h4>
+                            <p class="video-card-date">${date}</p>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch(e) {
+                console.error("[v0] Error loading videos:", e);
+                grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger);grid-column:1/-1;">Erreur de chargement</div>';
+            }
+        }
+
+        // INIT PROFILE
+        function init() {
+            document.getElementById('previewAvatar').src = user.picture || user.avatar || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
             
             const fullName = user.name || "";
             const parts = fullName.split(' ');
             document.getElementById('prenom').value = parts[0] || "";
             document.getElementById('nom').value = parts.slice(1).join(' ') || "";
-            document.getElementById('pseudo').value = user.given_name || "";
+            document.getElementById('pseudo').value = user.given_name || user.pseudo || "";
             document.getElementById('bio').value = user.bio || "";
 
             renderGamesUI(user.games || [], user.details || {});
@@ -782,12 +907,11 @@
             row.classList.toggle('active');
         }
 
-        // 3. UPLOAD AVATAR
+        // UPLOAD AVATAR
         let newAvatarUrl = null;
         async function uploadAvatar() {
             const file = document.getElementById('fileInput').files[0];
             if(!file) return;
-            console.log("Upload Avatar...", file.name);
             
             const fd = new FormData();
             fd.append('videoFile', file);
@@ -801,23 +925,19 @@
                 if(data.src) {
                     newAvatarUrl = data.src;
                     document.getElementById('previewAvatar').src = newAvatarUrl;
-                    console.log("Avatar uploade avec succes ! URL :", newAvatarUrl);
                 } else {
-                    console.error("Erreur upload Cloudinary :", data.error);
                     alert("Erreur lors de l'upload de l'image.");
                 }
             } catch(e) { 
-                console.error("Exception upload :", e);
                 alert("Erreur de connexion pour l'upload.");
             }
             finally { document.querySelector('.avatar-wrapper').classList.remove('loading'); }
         }
 
-        // 4. SAUVEGARDE GLOBALE
+        // SAVE PROFILE
         async function saveProfile() {
             const btn = document.querySelector('.btn-save');
             btn.innerText = "Sauvegarde en cours..."; btn.disabled = true;
-            console.log("Debut sauvegarde du profil...");
 
             const activeGames = [];
             const details = {};
@@ -841,9 +961,6 @@
 
             if(newAvatarUrl) {
                 payload.avatar = newAvatarUrl;
-                console.log("URL du nouvel avatar incluse dans le payload :", newAvatarUrl);
-            } else {
-                console.log("Aucun nouvel avatar a sauvegarder.");
             }
 
             try {
@@ -855,10 +972,11 @@
                 const data = await res.json();
 
                 if(res.ok) {
-                    console.log("Sauvegarde reussie ! Mise a jour du LocalStorage.");
                     user.name = data.user.name;
                     user.given_name = data.user.pseudo;
+                    user.pseudo = data.user.pseudo;
                     user.picture = data.user.avatar;
+                    user.avatar = data.user.avatar;
                     user.bio = data.user.bio;
                     user.games = data.user.games;
                     user.details = data.user.details;
@@ -868,11 +986,9 @@
                     t.classList.add('show');
                     setTimeout(() => t.classList.remove('show'), 3000);
                 } else {
-                    console.error("Erreur API Update :", data.error);
                     alert("Erreur: " + data.error);
                 }
             } catch(e) { 
-                console.error("Exception Sauvegarde :", e);
                 alert("Erreur serveur"); 
             }
             

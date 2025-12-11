@@ -237,20 +237,23 @@
             visibility:visible; 
             transform:scale(1);
         }
-        .upload-indicator .spinner {
-            width:20px;
-            height:20px;
-            border:2px solid var(--border);
-            border-top-color:var(--accent);
-            border-radius:50%;
-            animation:spin 0.8s linear infinite;
+        /* Added upload icon style */
+        .upload-indicator .upload-icon {
+            color:var(--accent);
+            font-size:1rem;
         }
-        @keyframes spin { to { transform:rotate(360deg); } }
+        .upload-indicator.uploading .upload-icon {
+            animation:uploadBounce 0.6s ease-in-out infinite;
+        }
+        @keyframes uploadBounce {
+            0%,100% { transform:translateY(0); }
+            50% { transform:translateY(-3px); }
+        }
         .upload-indicator.success { 
             border-color:var(--success); 
             background:var(--success);
         }
-        .upload-indicator.success .spinner { display:none; }
+        .upload-indicator.success .upload-icon { display:none; }
         .upload-indicator .success-icon { 
             display:none; 
             color:#fff; 
@@ -273,13 +276,20 @@
             height:100%;
             background:#fff;
             width:0%;
-            transition:width 0.1s linear;
+            transition:none;
             border-radius:0 2px 2px 0;
+            pointer-events:none;
         }
         .video-progress-container:hover {
             height:6px;
         }
         .video-progress-container:hover .video-progress-bar {
+            background:var(--accent);
+        }
+        .video-progress-container.dragging {
+            height:8px;
+        }
+        .video-progress-container.dragging .video-progress-bar {
             background:var(--accent);
         }
         
@@ -357,6 +367,7 @@
                 width:40px;
                 height:40px;
             }
+            .upload-indicator .upload-icon { font-size:0.8rem; }
         }
 
         /* MODAL */
@@ -373,10 +384,10 @@
 </head>
 <body>
 
-<!-- Upload indicator -->
+<!-- Upload indicator - Changed to upload icon instead of spinner -->
 <div class="upload-indicator" id="uploadIndicator">
-    <div class="spinner"></div>
-    <i class="fa-solid fa-check-circle success-icon"></i>
+    <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+    <i class="fa-solid fa-check success-icon"></i>
 </div>
 
 <!-- Mobile ELO badge in top right corner -->
@@ -385,12 +396,7 @@
     <div class="mobile-elo-popup" id="mobileEloPopup">+10</div>
 </div>
 
-<!-- Upload toast notification -->
-<div class="upload-toast" id="uploadToast">
-    <div class="spinner"></div>
-    <i class="fa-solid fa-check-circle success-icon"></i>
-    <span class="upload-toast-text" id="uploadToastText">Publication en cours...</span>
-</div>
+<!-- Removed the old upload-toast div completely -->
 
 <div class="app-layout" id="appLayout">
     <header class="header">
@@ -560,7 +566,6 @@
     }
     // ==========================================
     // ==========================================
-    // ==========================================
     function setupTapToPause(slide) {
         const container = slide.querySelector('.video-container');
         const video = slide.querySelector('video');
@@ -574,21 +579,63 @@
         // Progress bar update
         if (progressBar) {
             video.addEventListener('timeupdate', () => {
-                const percent = (video.currentTime / video.duration) * 100;
-                progressBar.style.width = percent + '%';
+                if (!progressContainer.classList.contains('dragging')) {
+                    const percent = (video.currentTime / video.duration) * 100;
+                    progressBar.style.width = percent + '%';
+                }
             });
         }
         
-        // Click on progress bar to seek
         if (progressContainer) {
-            progressContainer.addEventListener('click', (e) => {
-                e.stopPropagation();
+            let isDraggingProgress = false;
+            
+            const seekToPosition = (e) => {
                 const rect = progressContainer.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const percent = (clickX / rect.width);
-                // Ensure percent is between 0 and 1
-                const clampedPercent = Math.max(0, Math.min(1, percent));
-                video.currentTime = clampedPercent * video.duration;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clickX = clientX - rect.left;
+                const percent = Math.max(0, Math.min(1, clickX / rect.width));
+                video.currentTime = percent * video.duration;
+                progressBar.style.width = (percent * 100) + '%';
+            };
+            
+            // Mouse events
+            progressContainer.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                isDraggingProgress = true;
+                progressContainer.classList.add('dragging');
+                seekToPosition(e);
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (isDraggingProgress) {
+                    seekToPosition(e);
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isDraggingProgress) {
+                    isDraggingProgress = false;
+                    progressContainer.classList.remove('dragging');
+                }
+            });
+            
+            // Touch events for mobile
+            progressContainer.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+                isDraggingProgress = true;
+                progressContainer.classList.add('dragging');
+                seekToPosition(e);
+            }, { passive: true });
+            
+            progressContainer.addEventListener('touchmove', (e) => {
+                if (isDraggingProgress) {
+                    seekToPosition(e);
+                }
+            }, { passive: true });
+            
+            progressContainer.addEventListener('touchend', () => {
+                isDraggingProgress = false;
+                progressContainer.classList.remove('dragging');
             });
         }
         
@@ -597,11 +644,13 @@
         let isSpeedUp = false;
         
         container.addEventListener('touchstart', (e) => {
+            // Skip if touching progress bar
+            if (e.target.closest('.video-progress-container')) return;
+            
             const touch = e.touches[0];
             const rect = container.getBoundingClientRect();
             const touchX = touch.clientX - rect.left;
             
-            // If touch is on right 40% of screen
             if (touchX > rect.width * 0.6) {
                 holdTimer = setTimeout(() => {
                     if (!video.paused) {
@@ -611,7 +660,7 @@
                             speedIndicator.classList.add('show');
                         }
                     }
-                }, 200); // 200ms hold to activate
+                }, 200);
             }
         }, { passive: true });
         
@@ -626,7 +675,7 @@
                 if (speedIndicator) {
                     speedIndicator.classList.remove('show');
                 }
-                return; // Don't toggle pause if we were speeding
+                return;
             }
         });
         
@@ -680,17 +729,12 @@
         
         // Tap to pause/play (click handler)
         container.addEventListener('click', (e) => {
-            // Don't trigger if clicking on action buttons, progress bar, or info area
             if (e.target.closest('.side-actions') || e.target.closest('.video-info') || e.target.closest('.video-progress-container')) return;
-            
-            // Don't toggle if we just finished speed mode
             if (isSpeedUp) return;
-            
             if (!pauseIndicator) return;
             
             if (video.paused) {
                 video.play();
-                // Hide animation
                 pauseIndicator.classList.remove('show');
                 pauseIndicator.classList.add('hide-anim');
                 setTimeout(() => {
@@ -699,7 +743,6 @@
                 }, 150);
             } else {
                 video.pause();
-                // Show pause icon
                 pauseIndicator.querySelector('i').className = 'fa-solid fa-pause';
                 pauseIndicator.classList.remove('hide-anim');
                 pauseIndicator.classList.add('show');
@@ -1240,14 +1283,14 @@
     function showUploadIndicator() {
         const indicator = document.getElementById('uploadIndicator');
         indicator.classList.remove('success');
-        indicator.classList.add('show');
+        indicator.classList.add('show', 'uploading');
     }
     
     function showUploadSuccess() {
         const indicator = document.getElementById('uploadIndicator');
+        indicator.classList.remove('uploading');
         indicator.classList.add('success');
         
-        // Hide after 2 seconds
         setTimeout(() => {
             indicator.classList.remove('show', 'success');
         }, 2000);
@@ -1255,7 +1298,7 @@
     
     function hideUploadIndicator() {
         const indicator = document.getElementById('uploadIndicator');
-        indicator.classList.remove('show', 'success');
+        indicator.classList.remove('show', 'success', 'uploading');
     }
 
     // ==========================================
@@ -1411,7 +1454,7 @@
                         if (!viewedRooms.includes(roomId)) {
                             viewedRooms.push(roomId);
                             if (viewedRooms.length > 100) viewedRooms = viewedRooms.slice(-100);
-                            localStorage.setItem('viewedRooms', JSON.stringify(viewedRooms));
+                            localStorage.setItem('viewedRooms', JSON.JSON.stringify(viewedRooms));
                         }
                         
                         const video = entry.target.querySelector('video');
