@@ -2,96 +2,595 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>DebateRoom | Setup</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&family=Oswald:wght@500&display=swap" rel="stylesheet">
+    <title>DebateRoom | Setup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <style>
-        :root { --bg:#050505; --card:#111; --accent:#D4AF37; --text:#FFF; --border:rgba(255,255,255,0.1); }
-        body { background:var(--bg); color:var(--text); font-family:'Outfit', sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; padding:20px; overflow-x:hidden; }
-        
-        /* CORRECTION ICI : Hauteur automatique et Scroll */
-        .container { 
-            width:100%; max-width:850px; 
-            background:rgba(18,18,18,0.9); 
-            border:1px solid var(--border); 
-            border-radius:24px; 
-            padding:0; 
-            position:relative; 
-            display:flex; flex-direction:column; 
-            backdrop-filter:blur(20px); 
-            box-shadow:0 20px 80px rgba(0,0,0,0.7);
-            
-            /* C'est ça qui bloquait le bouton : */
-            height: auto; 
-            min-height: 600px; 
-            max-height: 90vh; /* Ne dépasse pas l'écran */
+        :root {
+            --bg: #030303;
+            --surface: #0a0a0a;
+            --surface-elevated: #111111;
+            --accent: #D4AF37;
+            --accent-dim: rgba(212, 175, 55, 0.15);
+            --text: #ffffff;
+            --text-secondary: #888888;
+            --border: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.12);
+            --success: #2ecc71;
         }
-        
-        /* Sidebar Progress (Desktop) */
-        .sidebar { width: 250px; background: rgba(255,255,255,0.03); border-right: 1px solid var(--border); padding: 40px 30px; display: flex; flex-direction: column; justify-content: center; gap: 40px; }
-        .step-indicator { display: flex; align-items: center; gap: 15px; opacity: 0.4; transition: 0.3s; }
-        .step-indicator.active { opacity: 1; transform: translateX(10px); }
-        .step-num { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #fff; display: flex; align-items: center; justify-content: center; font-family: 'Oswald'; font-size: 0.9rem; }
-        .step-indicator.active .step-num { background: var(--accent); border-color: var(--accent); color: #000; box-shadow: 0 0 15px rgba(212,175,55,0.4); }
-        .step-title { font-weight: 500; font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase; }
 
-        /* Main Content - AJOUT DU SCROLL */
-        .content { 
-            flex: 1; padding: 40px; display: flex; flex-direction: column; position: relative; 
-            overflow-y: auto; /* Permet de scroller si trop petit */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
         }
-        
-        /* Pour cacher la barre de scroll moche */
-        .content::-webkit-scrollbar { width: 6px; }
-        .content::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 
-        .step-content { display: none; flex-direction: column; height: 100%; animation: fadeRight 0.5s ease; }
-        .step-content.active { display: flex; }
-        
-        @keyframes fadeRight { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+        /* Background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse at 0% 0%, rgba(212, 175, 55, 0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 100% 100%, rgba(212, 175, 55, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+        }
 
-        h2 { font-family: 'Oswald'; font-size: 2rem; margin: 0 0 10px; }
-        h2 span { color: var(--accent); }
-        .desc { color: #888; margin-bottom: 20px; font-weight: 300; }
+        /* Main Container */
+        .container {
+            width: 100%;
+            max-width: 950px;
+            background: linear-gradient(145deg, rgba(12, 12, 12, 0.95), rgba(6, 6, 6, 0.98));
+            border: 1px solid var(--border);
+            border-radius: 32px;
+            display: flex;
+            overflow: hidden;
+            backdrop-filter: blur(40px);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+            animation: containerEntry 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        @keyframes containerEntry {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: rgba(0, 0, 0, 0.3);
+            border-right: 1px solid var(--border);
+            padding: 50px 35px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar-header {
+            margin-bottom: 40px;
+        }
+
+        .sidebar-logo {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-logo span {
+            color: var(--accent);
+        }
+
+        .logo-mark {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), #b8962e);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-mark i {
+            color: #000;
+            font-size: 14px;
+        }
+
+        /* Step Indicators */
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 18px;
+            border-radius: 14px;
+            cursor: default;
+            transition: all 0.4s ease;
+            opacity: 0.4;
+            position: relative;
+        }
+
+        .step-indicator.active {
+            opacity: 1;
+            background: var(--accent-dim);
+        }
+
+        .step-indicator.completed {
+            opacity: 0.7;
+        }
+
+        .step-num {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.4s ease;
+            background: transparent;
+        }
+
+        .step-indicator.active .step-num {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #000;
+            box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+        }
+
+        .step-indicator.completed .step-num {
+            background: var(--success);
+            border-color: var(--success);
+            color: #000;
+        }
+
+        .step-info {
+            flex: 1;
+        }
+
+        .step-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+        }
+
+        .step-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            max-height: 85vh;
+        }
+
+        .content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        /* Step Content */
+        .step-content {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .step-content.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Headers */
+        .content-header {
+            margin-bottom: 35px;
+        }
+
+        .content-header h2 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .content-header h2 span {
+            color: var(--accent);
+        }
+
+        .content-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Google Auto-fill Box */
+        .google-autofill {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .google-autofill:hover {
+            border-color: var(--border-hover);
+        }
+
+        .google-autofill span {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
 
         /* Form Grid */
-        .grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
-        .full { grid-column:span 2; }
-        input { width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--border); padding:12px; border-radius:12px; color:#fff; outline:none; transition:0.3s; }
-        input:focus { border-color:var(--accent); background:rgba(212,175,55,0.05); }
-        input:disabled { opacity: 0.6; cursor: not-allowed; }
-        
-        /* Games Cards */
-        .games { display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:15px; }
-        .game { aspect-ratio:3/4; border:1px solid var(--border); border-radius:16px; cursor:pointer; background-size:cover; background-position:center; transition:0.3s; position:relative; overflow:hidden; }
-        .game::after { content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.8), transparent); opacity:0.6; transition:0.3s; }
-        .game:hover { transform:translateY(-5px); border-color:#fff; }
-        .game.selected { border-color:var(--accent); box-shadow:0 0 25px rgba(212,175,55,0.3); transform:translateY(-5px); }
-        .game.selected::after { opacity:0; }
-        .check { position:absolute; bottom:10px; right:10px; background:var(--accent); color:#000; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; opacity:0; transform:scale(0); transition:0.3s; z-index:10; }
-        .game.selected .check { opacity:1; transform:scale(1); }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
 
-        /* Ranks */
-        .rank-row { display:flex; gap:10px; overflow-x:auto; padding-bottom:10px; margin-bottom:20px; scrollbar-width:none; }
-        .rank { min-width:60px; height:60px; border-radius:12px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; background:rgba(255,255,255,0.02); transition:0.2s; font-size:0.8rem; font-weight:700; color:#666; }
-        .rank:hover { background:rgba(255,255,255,0.05); color:#fff; }
-        .rank.selected { background:var(--accent); color:#000; border-color:var(--accent); box-shadow:0 5px 15px rgba(212,175,55,0.3); }
+        .form-grid .full {
+            grid-column: span 2;
+        }
 
-        /* Footer Actions */
-        .actions { margin-top:30px; display:flex; justify-content:flex-end; gap:15px; border-top:1px solid var(--border); padding-top:20px; }
-        button { padding:14px 30px; border-radius:50px; font-weight:700; cursor:pointer; border:none; transition:0.3s; font-family:'Outfit'; text-transform:uppercase; letter-spacing:1px; font-size:0.8rem; }
-        .btn-main { background:var(--accent); color:#000; }
-        .btn-main:hover { transform:translateY(-2px); box-shadow:0 10px 20px rgba(212,175,55,0.2); }
-        .btn-ghost { background:transparent; color:#666; border:1px solid transparent; }
-        .btn-ghost:hover { color:#fff; border-color:#333; }
+        input {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 16px 18px;
+            border-radius: 14px;
+            color: var(--text);
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
 
-        @media(max-width:800px) {
-            .container { flex-direction:column; height:100vh; max-height:100vh; border-radius:0; border:none; }
-            .sidebar { width:100%; flex-direction:row; padding:15px; border-right:none; border-bottom:1px solid var(--border); gap:10px; flex-shrink: 0; }
-            .step-title { display:none; }
-            .content { padding:20px; }
+        input::placeholder {
+            color: #555;
+        }
+
+        input:hover {
+            border-color: var(--border-hover);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        input.google-linked {
+            border-color: var(--success) !important;
+            background: rgba(46, 204, 113, 0.1) !important;
+        }
+
+        /* Games Grid */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 18px;
+            margin-top: 10px;
+        }
+
+        .game-card {
+            aspect-ratio: 3/4;
+            border-radius: 20px;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 50%, transparent 100%);
+            transition: opacity 0.3s;
+        }
+
+        .game-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .game-card.selected {
+            border-color: var(--accent);
+            box-shadow: 0 15px 40px rgba(212, 175, 55, 0.25);
+        }
+
+        .game-card.selected::before {
+            background: linear-gradient(to top, rgba(212, 175, 55, 0.2) 0%, transparent 60%);
+        }
+
+        .game-check {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 30px;
+            height: 30px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 0.8rem;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 2;
+        }
+
+        .game-card.selected .game-check {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .game-name {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            z-index: 2;
+        }
+
+        /* Rank Section */
+        .rank-section {
+            margin-bottom: 30px;
+        }
+
+        .rank-section h4 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rank-section h4::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .rank-row {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            scrollbar-width: none;
+        }
+
+        .rank-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        .rank {
+            min-width: 75px;
+            height: 50px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: var(--surface);
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .rank:hover {
+            border-color: var(--border-hover);
+            color: var(--text);
+            background: var(--surface-elevated);
+        }
+
+        .rank.selected {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+        }
+
+        /* Actions Footer */
+        .actions {
+            margin-top: auto;
+            padding-top: 30px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 16px 35px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid transparent;
+        }
+
+        .btn-ghost:hover {
+            color: var(--text);
+            border-color: var(--border);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #c9a432);
+            color: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(212, 175, 55, 0.3);
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 850px) {
+            .container {
+                flex-direction: column;
+                max-height: none;
+                border-radius: 24px;
+            }
+
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                padding: 20px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                gap: 10px;
+                overflow-x: auto;
+            }
+
+            .sidebar-header {
+                display: none;
+            }
+
+            .step-indicator {
+                min-width: auto;
+                padding: 12px 16px;
+            }
+
+            .step-info {
+                display: none;
+            }
+
+            .content {
+                padding: 30px 25px;
+                max-height: none;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid .full {
+                grid-column: span 1;
+            }
+
+            .games-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .content-header h2 {
+                font-size: 1.8rem;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -100,66 +599,145 @@
 
     <div class="container">
         <div class="sidebar">
-            <div class="step-indicator active" id="ind1"><div class="step-num">1</div><div class="step-title">Identité</div></div>
-            <div class="step-indicator" id="ind2"><div class="step-num">2</div><div class="step-title">Jeux</div></div>
-            <div class="step-indicator" id="ind3"><div class="step-num">3</div><div class="step-title">Niveaux</div></div>
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-mark">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    DEBATE<span>ROOM</span>
+                </div>
+            </div>
+
+            <div class="step-indicator active" id="ind1">
+                <div class="step-num">1</div>
+                <div class="step-info">
+                    <div class="step-title">Identite</div>
+                    <div class="step-desc">Tes informations</div>
+                </div>
+            </div>
+
+            <div class="step-indicator" id="ind2">
+                <div class="step-num">2</div>
+                <div class="step-info">
+                    <div class="step-title">Jeux</div>
+                    <div class="step-desc">Tes terrains</div>
+                </div>
+            </div>
+
+            <div class="step-indicator" id="ind3">
+                <div class="step-num">3</div>
+                <div class="step-info">
+                    <div class="step-title">Niveaux</div>
+                    <div class="step-desc">Ton rang</div>
+                </div>
+            </div>
         </div>
 
         <div class="content">
+            <!-- Step 1: Identity -->
             <div class="step-content active" id="step1">
-                <h2>Qui <span>es-tu ?</span></h2>
-                <p class="desc">Ton identité dans l'arène.</p>
-                
-                <div style="margin-bottom:20px; background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-                    <span style="color:#aaa; font-size:0.9rem;">Auto-remplir avec Google :</span>
-                    <div id="g_id_onload" data-client_id="233594795614-4ti76o1u50quom8bedro552dhumdfgfk.apps.googleusercontent.com" data-callback="handleGoogle" data-auto_prompt="false"></div>
-                    <div class="g_id_signin" data-type="icon" data-shape="circle" data-theme="filled_black"></div>
+                <div class="content-header">
+                    <h2>Qui <span>es-tu ?</span></h2>
+                    <p>Ton identite dans l'arene.</p>
                 </div>
 
-                <div class="grid">
-                    <input type="text" id="prenom" placeholder="Prénom">
+                <div class="google-autofill">
+                    <span>Auto-remplir avec Google</span>
+                    <div id="g_id_onload"
+                        data-client_id="233594795614-4ti76o1u50quom8bedro552dhumdfgfk.apps.googleusercontent.com"
+                        data-callback="handleGoogle"
+                        data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin"
+                        data-type="icon"
+                        data-shape="circle"
+                        data-theme="filled_black">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <input type="text" id="prenom" placeholder="Prenom">
                     <input type="text" id="nom" placeholder="Nom">
                     <input type="text" id="pseudo" placeholder="Pseudo (Gamer Tag)" class="full">
-                    <input type="number" id="age" placeholder="Âge">
+                    <input type="number" id="age" placeholder="Age">
                     <input type="email" id="email" placeholder="Email">
                     <input type="password" id="password" placeholder="Mot de passe" class="full">
                 </div>
-                
+
                 <div class="actions">
-                    <button class="btn-main" onclick="validateStep1()">CONTINUER <i class="fa-solid fa-arrow-right"></i></button>
+                    <button class="btn btn-primary" onclick="validateStep1()">
+                        Continuer
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
                 </div>
             </div>
 
+            <!-- Step 2: Games -->
             <div class="step-content" id="step2">
-                <h2>Tes <span>Jeux</span></h2>
-                <p class="desc">Sélectionne tes terrains de bataille.</p>
-                <div class="games">
-                    <div class="game" onclick="toggleGame(this,'lol')" style="background-image:url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Aatrox_0.jpg')"><div class="check"><i class="fa-solid fa-check"></i></div></div>
-                    <div class="game" onclick="toggleGame(this,'valorant')" style="background-image:url('https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt3f072eb373d32571/623267d325e79e623101c59c/Jett_0.jpg')"><div class="check"><i class="fa-solid fa-check"></i></div></div>
-                    <div class="game" onclick="toggleGame(this,'rl')" style="background-image:url('https://rocketleague.media.zestyio.com/rl_cross-play_asset_rl_1920.309bf22bd29c2e411e9dd8eb07575bb1.jpg')"><div class="check"><i class="fa-solid fa-check"></i></div></div>
+                <div class="content-header">
+                    <h2>Tes <span>Jeux</span></h2>
+                    <p>Selectionne tes terrains de bataille.</p>
                 </div>
-                <div class="actions"><button class="btn-ghost" onclick="goStep(1)">Retour</button><button class="btn-main" onclick="validateStep2()">Continuer</button></div>
+
+                <div class="games-grid">
+                    <div class="game-card" onclick="toggleGame(this,'lol')" style="background-image:url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Aatrox_0.jpg')">
+                        <div class="game-check"><i class="fa-solid fa-check"></i></div>
+                        <div class="game-name">League of Legends</div>
+                    </div>
+                    <div class="game-card" onclick="toggleGame(this,'valorant')" style="background-image:url('https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt3f072eb373d32571/623267d325e79e623101c59c/Jett_0.jpg')">
+                        <div class="game-check"><i class="fa-solid fa-check"></i></div>
+                        <div class="game-name">Valorant</div>
+                    </div>
+                    <div class="game-card" onclick="toggleGame(this,'rl')" style="background-image:url('https://rocketleague.media.zestyio.com/rl_cross-play_asset_rl_1920.309bf22bd29c2e411e9dd8eb07575bb1.jpg')">
+                        <div class="game-check"><i class="fa-solid fa-check"></i></div>
+                        <div class="game-name">Rocket League</div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-ghost" onclick="goStep(1)">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        Retour
+                    </button>
+                    <button class="btn btn-primary" onclick="validateStep2()">
+                        Continuer
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
             </div>
 
+            <!-- Step 3: Ranks -->
             <div class="step-content" id="step3">
-                <h2>Ton <span>Niveau</span></h2>
-                <p class="desc">Sois honnête (ou pas).</p>
-                <div id="detailsArea" style="flex:1; overflow-y:auto; padding-right:5px;"></div>
-                <div class="actions"><button class="btn-ghost" onclick="goStep(2)">Retour</button><button class="btn-main" onclick="finish()">ENTRER DANS L'ARÈNE</button></div>
+                <div class="content-header">
+                    <h2>Ton <span>Niveau</span></h2>
+                    <p>Sois honnete (ou pas).</p>
+                </div>
+
+                <div id="detailsArea" style="flex:1; overflow-y:auto;"></div>
+
+                <div class="actions">
+                    <button class="btn btn-ghost" onclick="goStep(2)">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        Retour
+                    </button>
+                    <button class="btn btn-primary" onclick="finish()">
+                        <i class="fa-solid fa-rocket"></i>
+                        Entrer dans l'arene
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        let googleUser = null, selectedGames = [];
+        let googleUser = null;
+        let selectedGames = [];
         const preLoad = localStorage.getItem('temp_google_user');
-        
-        // Si on vient de Login.html avec des infos Google, on pré-remplit
-        if(preLoad) {
+
+        if (preLoad) {
             const p = JSON.parse(preLoad);
             googleUser = p;
             fillForm(p.given_name, p.family_name, p.email);
-            // On nettoie pour ne pas le refaire si on reload
             localStorage.removeItem('temp_google_user');
         }
 
@@ -167,55 +745,71 @@
             const p = JSON.parse(atob(res.credential.split('.')[1]));
             googleUser = p;
             fillForm(p.given_name, p.family_name, p.email);
-            alert("Compte Google détecté ! Remplissez votre Pseudo.");
+            alert("Compte Google detecte ! Remplissez votre Pseudo.");
         }
 
         function fillForm(first, last, mail) {
-            if(first) document.getElementById('prenom').value = first;
-            if(last) document.getElementById('nom').value = last;
-            if(mail) document.getElementById('email').value = mail;
+            if (first) document.getElementById('prenom').value = first;
+            if (last) document.getElementById('nom').value = last;
+            if (mail) document.getElementById('email').value = mail;
             document.getElementById('password').disabled = true;
-            document.getElementById('password').placeholder = "Compte Google lié ✅";
-            document.getElementById('password').style.border = "1px solid #2ecc71";
+            document.getElementById('password').placeholder = "Compte Google lie";
+            document.getElementById('password').classList.add('google-linked');
         }
 
         function goStep(n) {
             document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.step-indicator').forEach(s => s.classList.remove('active'));
-            document.getElementById('step'+n).classList.add('active');
-            document.getElementById('ind'+n).classList.add('active');
+            document.querySelectorAll('.step-indicator').forEach((s, i) => {
+                s.classList.remove('active');
+                if (i < n - 1) s.classList.add('completed');
+                else s.classList.remove('completed');
+            });
+            document.getElementById('step' + n).classList.add('active');
+            document.getElementById('ind' + n).classList.add('active');
         }
 
         function validateStep1() {
             const mail = document.getElementById('email').value;
             const pseudo = document.getElementById('pseudo').value;
-            
-            if(!mail) return alert("L'email est obligatoire.");
-            if(!pseudo) return alert("Choisissez un pseudo !");
-            
+
+            if (!mail) return alert("L'email est obligatoire.");
+            if (!pseudo) return alert("Choisissez un pseudo !");
+
             goStep(2);
         }
 
         function toggleGame(el, id) {
             el.classList.toggle('selected');
-            selectedGames.includes(id) ? selectedGames=selectedGames.filter(x=>x!==id) : selectedGames.push(id);
+            if (selectedGames.includes(id)) {
+                selectedGames = selectedGames.filter(x => x !== id);
+            } else {
+                selectedGames.push(id);
+            }
         }
 
         function validateStep2() {
-            if(selectedGames.length === 0) return alert("Choisis au moins un jeu");
+            if (selectedGames.length === 0) return alert("Choisis au moins un jeu");
+
             const container = document.getElementById('detailsArea');
             container.innerHTML = '';
+
             const gameInfo = {
-                'lol': { name: 'LoL', ranks: ['Iron','Bronze','Silver','Gold','Plat','Emerald','Dia','Master'] },
-                'valorant': { name: 'Valorant', ranks: ['Iron','Bronze','Silver','Gold','Plat','Dia','Asc','Immo'] },
-                'rl': { name: 'Rocket League', ranks: ['Bronze','Silver','Gold','Plat','Dia','Champ','GC','SSL'] }
+                'lol': { name: 'League of Legends', ranks: ['Iron', 'Bronze', 'Silver', 'Gold', 'Plat', 'Emerald', 'Diamond', 'Master'] },
+                'valorant': { name: 'Valorant', ranks: ['Iron', 'Bronze', 'Silver', 'Gold', 'Plat', 'Diamond', 'Ascendant', 'Immortal'] },
+                'rl': { name: 'Rocket League', ranks: ['Bronze', 'Silver', 'Gold', 'Plat', 'Diamond', 'Champ', 'GC', 'SSL'] }
             };
+
             selectedGames.forEach(gid => {
-                let html = `<div style="margin-bottom:25px;" data-game="${gid}"><h4 style="margin-bottom:10px; color:#fff;">${gameInfo[gid].name}</h4><div class="rank-row">`;
-                gameInfo[gid].ranks.forEach(r => html += `<div class="rank" onclick="selectRank(this)">${r}</div>`);
+                let html = `<div class="rank-section" data-game="${gid}">
+                    <h4>${gameInfo[gid].name}</h4>
+                    <div class="rank-row">`;
+                gameInfo[gid].ranks.forEach(r => {
+                    html += `<div class="rank" onclick="selectRank(this)">${r}</div>`;
+                });
                 html += `</div></div>`;
                 container.innerHTML += html;
             });
+
             goStep(3);
         }
 
@@ -232,13 +826,14 @@
                 email: document.getElementById('email').value,
                 age: document.getElementById('age').value,
                 password: document.getElementById('password').value,
-                games: selectedGames, details: {}
+                games: selectedGames,
+                details: {}
             };
-            
-            if(googleUser) { 
-                data.googleId=googleUser.sub; 
-                data.avatar=googleUser.picture; 
-                data.password=null; 
+
+            if (googleUser) {
+                data.googleId = googleUser.sub;
+                data.avatar = googleUser.picture;
+                data.password = null;
             }
 
             selectedGames.forEach(gid => {
@@ -248,19 +843,26 @@
 
             try {
                 const res = await fetch('https://debateroom-u1gz.onrender.com/api/auth/onboarding', {
-                    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
                 });
                 const json = await res.json();
-                if(res.ok) {
+                if (res.ok) {
                     localStorage.setItem('user_profile', JSON.stringify({
-                        email: json.user.email, 
-                        name: json.user.name, 
-                        given_name: json.user.pseudo, 
+                        email: json.user.email,
+                        name: json.user.name,
+                        given_name: json.user.pseudo,
                         picture: json.user.avatar
                     }));
                     window.location.href = 'index.html';
-                } else alert("Erreur: "+json.error);
-            } catch(e) { console.error(e); alert("Erreur serveur"); }
+                } else {
+                    alert("Erreur: " + json.error);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Erreur serveur");
+            }
         }
     </script>
 </body>
