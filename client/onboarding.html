@@ -247,7 +247,7 @@
             });
 
             try {
-                const res = await fetch('http://localhost:3001/api/auth/onboarding', {
+                const res = await fetch('https://debateroom-api.onrender.com/api/auth/onboarding', {
                     method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
                 });
                 const json = await res.json();
