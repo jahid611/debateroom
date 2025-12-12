@@ -782,7 +782,7 @@
                     if (!viewedRooms.includes(roomId)) {
                         viewedRooms.push(roomId);
                         if (viewedRooms.length > 100) viewedRooms = viewedRooms.slice(-100);
-                        localStorage.setItem('viewedRooms', JSON.JSON.stringify(viewedRooms));
+                        localStorage.setItem('viewedRooms', JSON.stringify(viewedRooms));
                     }
                     
                     const video = entry.target.querySelector('video');
@@ -1322,6 +1322,89 @@
         if (file) document.getElementById('uploadFileName').innerText = file.name;
     };
 
+    socket.on('room_created', (slug) => {
+        console.log("[v0] Room created via socket:", slug);
+        showUploadSuccess();
+        
+        setTimeout(() => {
+            if (isCreatorUpload && pendingRoomData) {
+                const container = document.getElementById('feedScroll');
+                const createdDate = new Date();
+                const formattedDate = formatDate(createdDate);
+                const creatorAvatar = userAvatarUrl;
+                const creatorName = user.pseudo || user.given_name || user.name;
+                
+                const newSlide = document.createElement('div');
+                newSlide.className = 'video-slide';
+                newSlide.dataset.slug = slug;
+                newSlide.id = `room-${slug}`;
+                
+                newSlide.innerHTML = `
+                    <div class="video-container">
+                        <video src="${pendingRoomData.videoUrl}" loop playsinline muted></video>
+                        <div class="pause-indicator"><i class="fa-solid fa-pause"></i></div>
+                        <div class="speed-indicator"><i class="fa-solid fa-forward-fast"></i> 2x</div>
+                        <div class="video-progress-container">
+                            <div class="video-progress-bar"></div>
+                        </div>
+                        <div class="mute-btn" onclick="toggleMute(event, this)"><i class="fa-solid fa-volume-high"></i></div>
+                    </div>
+                    <div class="video-info">
+                        <span class="video-game-tag"><i class="fa-solid fa-gamepad"></i> ${pendingRoomData.game}</span>
+                        <h2 class="video-title">${pendingRoomData.title}</h2>
+                        ${pendingRoomData.description ? `<p class="video-description">${pendingRoomData.description}</p>` : ''}
+                        <div class="video-creator">
+                            <div class="video-creator-avatar" style="background-image:url('${creatorAvatar}')" onclick="goToProfile('${user.email}')"></div>
+                            <div class="video-creator-info">
+                                <span class="video-creator-name" onclick="goToProfile('${user.email}')">@${creatorName}</span>
+                                <span class="video-creator-date">${formattedDate}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="side-actions">
+                        <div class="action-btn vote-valid" onclick="doVote('${slug}','valid')">
+                            <div class="action-circle" id="valid-${slug}"><i class="fa-solid fa-check"></i></div>
+                            <span class="action-count blind" id="valid-count-${slug}">0</span>
+                        </div>
+                        <div class="action-btn vote-inting" onclick="doVote('${slug}','inting')">
+                            <div class="action-circle" id="inting-${slug}"><i class="fa-solid fa-xmark"></i></div>
+                            <span class="action-count blind" id="inting-count-${slug}">0</span>
+                        </div>
+                        <div class="action-btn" onclick="openMobileChat('${slug}')">
+                            <div class="action-circle"><i class="fa-solid fa-comment-dots"></i></div>
+                            <span class="action-count" id="comment-count-${slug}">0</span>
+                        </div>
+                        <div class="action-btn" onclick="shareRoom('${slug}')">
+                            <div class="action-circle"><i class="fa-solid fa-share"></i></div>
+                            <span class="action-count">Partager</span>
+                        </div>
+                    </div>
+                `;
+                
+                container.insertBefore(newSlide, container.firstChild);
+                setupTapToPause(newSlide);
+                
+                const video = newSlide.querySelector('video');
+                if (video) {
+                    video.play().catch(() => {}); // Autoplay might be prevented by browser
+                    video.addEventListener('timeupdate', () => {
+                        const progressBar = newSlide.querySelector('.video-progress-bar');
+                        if (progressBar && !newSlide.querySelector('.video-progress-container').classList.contains('dragging')) {
+                            const percent = (video.currentTime / video.duration) * 100;
+                            progressBar.style.width = percent + '%';
+                        }
+                    });
+                }
+                
+                newSlide.scrollIntoView({ behavior: 'smooth' });
+                isCreatorUpload = false;
+                pendingRoomData = null;
+            }
+        }, 500);
+    });
+
+    let pendingRoomData = null;
+
     window.createRoom = async () => {
         const game = document.getElementById('newGameSelect').value;
         const link = document.getElementById('newLinkInput').value;
@@ -1350,6 +1433,7 @@
         
         try {
             let videoUrl = '';
+            let platform = 'file'; // Default to file or unknown if not specified
 
             if (selectedFile) {
                 const formData = new FormData();
@@ -1363,100 +1447,40 @@
                 if (!uploadRes.ok) throw new Error('Upload failed');
                 const uploadData = await uploadRes.json();
                 videoUrl = uploadData.src;
+                platform = 'file'; // Explicitly set to file
             } else if (hasLink) {
                 if (link.includes('youtube.com') || link.includes('youtu.be')) {
                     const ytId = link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/)?.[1];
                     videoUrl = ytId ? `https://www.youtube.com/embed/${ytId}` : link;
+                    platform = 'youtube';
                 } else if (link.includes('tiktok.com')) {
                     const ttId = link.match(/video\/(\d+)/)?.[1];
                     videoUrl = ttId ? `https://www.tiktok.com/embed/v2/${ttId}` : link;
+                    platform = 'tiktok';
                 } else {
+                    // If it's a link but not recognized, treat it as a direct URL (like a file path)
                     videoUrl = link;
+                    platform = 'file'; // Or perhaps 'other' if you have such a category
                 }
             }
 
-            const createRes = await fetch('https://debateroom-u1gz.onrender.com/api/rooms/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ game, videoUrl, ownerEmail: user.email, videoTitle: title, videoDescription: description })
+            pendingRoomData = { game, videoUrl, title, description, platform };
+            
+            socket.emit('create_room', {
+                game: game,
+                userEmail: user.email,
+                src: videoUrl,
+                title: title,
+                platform: platform,
+                description: description // Send description to backend as well
             });
-            
-            if (!createRes.ok) throw new Error('Room creation failed');
-            const room = await createRes.json();
-            
-            showUploadSuccess();
-            
-            setTimeout(() => {
-                if (isCreatorUpload) {
-                    const container = document.getElementById('feedScroll');
-                    const createdDate = new Date();
-                    const formattedDate = formatDate(createdDate);
-                    const creatorAvatar = userAvatarUrl;
-                    const creatorName = user.pseudo || user.given_name || user.name;
-                    
-                    const newSlide = document.createElement('div');
-                    newSlide.className = 'video-slide';
-                    newSlide.dataset.slug = room.slug;
-                    newSlide.id = `room-${room.slug}`;
-                    
-                    newSlide.innerHTML = `
-                        <div class="video-container">${getPlayerHTML(room)}</div>
-                        <div class="video-info">
-                            <span class="video-game-tag"><i class="fa-solid fa-gamepad"></i> ${game}</span>
-                            <h2 class="video-title">${title}</h2>
-                            ${description ? `<p class="video-description">${description}</p>` : ''}
-                            <div class="video-creator">
-                                <div class="video-creator-avatar" style="background-image:url('${creatorAvatar}')" onclick="goToProfile('${user.email}')"></div>
-                                <div class="video-creator-info">
-                                    <span class="video-creator-name" onclick="goToProfile('${user.email}')">@${creatorName}</span>
-                                    <span class="video-creator-date">${formattedDate}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="side-actions">
-                            <div class="action-btn vote-valid" onclick="doVote('${room.slug}','valid')">
-                                <div class="action-circle" id="valid-${room.slug}"><i class="fa-solid fa-check"></i></div>
-                                <span class="action-count blind" id="valid-count-${room.slug}">0</span>
-                            </div>
-                            <div class="action-btn vote-inting" onclick="doVote('${room.slug}','inting')">
-                                <div class="action-circle" id="inting-${room.slug}"><i class="fa-solid fa-xmark"></i></div>
-                                <span class="action-count blind" id="inting-count-${room.slug}">0</span>
-                            </div>
-                            <div class="action-btn" onclick="openMobileChat('${room.slug}')">
-                                <div class="action-circle"><i class="fa-solid fa-comment-dots"></i></div>
-                                <span class="action-count" id="comment-count-${room.slug}">0</span>
-                            </div>
-                            <div class="action-btn" onclick="shareRoom('${room.slug}')">
-                                <div class="action-circle"><i class="fa-solid fa-share"></i></div>
-                                <span class="action-count">Partager</span>
-                            </div>
-                        </div>
-                    `;
-                    
-                    container.insertBefore(newSlide, container.firstChild);
-                    setupTapToPause(newSlide);
-                    
-                    const video = newSlide.querySelector('video');
-                    if (video) {
-                        video.addEventListener('timeupdate', () => {
-                            const progressBar = newSlide.querySelector('.video-progress-bar');
-                            if (progressBar && !newSlide.querySelector('.video-progress-container').classList.contains('dragging')) {
-                                const percent = (video.currentTime / video.duration) * 100;
-                                progressBar.style.width = percent + '%';
-                            }
-                        });
-                    }
-                    
-                    newSlide.scrollIntoView({ behavior: 'smooth' });
-                    isCreatorUpload = false;
-                }
-            }, 500);
             
         } catch (e) {
             console.error("Upload error:", e);
             hideUploadIndicator();
             alert("Erreur lors de la publication. Reessayez.");
             isCreatorUpload = false;
+            pendingRoomData = null; // Clear pending data on error
         }
     };
 
