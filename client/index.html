@@ -1353,16 +1353,16 @@
 
             if (selectedFile) {
                 const formData = new FormData();
-                formData.append('video', selectedFile);
+                formData.append('videoFile', selectedFile);
 
-                const uploadRes = await fetch('https://debateroom-u1gz.onrender.com/api/upload/video', {
+                const uploadRes = await fetch('https://debateroom-u1gz.onrender.com/api/upload', {
                     method: 'POST',
                     body: formData
                 });
 
                 if (!uploadRes.ok) throw new Error('Upload failed');
                 const uploadData = await uploadRes.json();
-                videoUrl = uploadData.url;
+                videoUrl = uploadData.src;
             } else if (hasLink) {
                 if (link.includes('youtube.com') || link.includes('youtu.be')) {
                     const ytId = link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/)?.[1];
