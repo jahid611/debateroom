@@ -311,8 +311,7 @@
         
         async function loadProfile() {
             try {
-                // Fetch user profile
-                const userRes = await fetch(`https://debateroom-u1gz.onrender.com/api/users/profile?email=${encodeURIComponent(profileEmail)}`);
+                const userRes = await fetch(`https://debateroom-u1gz.onrender.com/api/auth/profile?email=${encodeURIComponent(profileEmail)}`);
                 if (!userRes.ok) throw new Error('User not found');
                 const userData = await userRes.json();
                 
