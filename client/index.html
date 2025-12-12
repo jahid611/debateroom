@@ -2,1759 +2,1000 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>DebateRoom</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DebateRoom | Profil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
+    
     <style>
-        :root { 
-            --bg:#000; 
-            --surface:#0a0a0a; 
-            --surface-elevated:#111; 
-            --accent:#D4AF37; 
-            --accent-glow:rgba(212,175,55,0.3); 
-            --text:#fff; 
-            --text-secondary:#a0a0a0; 
-            --border:rgba(255,255,255,0.08); 
-            --success:#00d26a; 
-            --danger:#ff4757; 
-            --chat-width:380px; 
-            --header-height:64px; 
-            --mobile-nav-height:70px; 
+        :root {
+            --bg: #09090b;
+            --bg-elevated: #18181b;
+            --card: #1c1c21;
+            --card-hover: #232329;
+            --accent: #d4af37;
+            --accent-glow: rgba(212, 175, 55, 0.15);
+            --accent-soft: rgba(212, 175, 55, 0.08);
+            --text: #fafafa;
+            --text-muted: #a1a1aa;
+            --text-dim: #71717a;
+            --border: rgba(255,255,255,0.06);
+            --border-accent: rgba(212, 175, 55, 0.3);
+            --danger: #ef4444;
+            --danger-soft: rgba(239, 68, 68, 0.1);
+            --success: #22c55e;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
         }
-        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-        html,body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); height:100%; width:100%; overflow:hidden; position:fixed; top:0; left:0; }
-        
-        /* LAYOUT */
-        .app-layout { display:grid; grid-template-columns:1fr var(--chat-width); grid-template-rows:var(--header-height) 1fr; height:100%; transition:grid-template-columns 0.3s cubic-bezier(0.4,0,0.2,1); }
-        .app-layout.chat-collapsed { grid-template-columns:1fr 0px; }
 
-        /* HEADER */
-        .header { grid-column:1/-1; height:var(--header-height); background:rgba(0,0,0,0.85); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 24px; z-index:100; }
-        .logo { font-family:'Space Grotesk',sans-serif; font-size:1.4rem; font-weight:700; color:var(--text); text-decoration:none; display:flex; align-items:center; gap:8px; }
-        .logo-icon { width:32px; height:32px; background:linear-gradient(135deg,var(--accent) 0%,#f0d77c 100%); border-radius:8px; display:flex; align-items:center; justify-content:center; color:#000; }
-        .logo span { color:var(--accent); }
-        .header-actions { display:flex; align-items:center; gap:8px; }
-        .header-btn { width:42px; height:42px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text-secondary); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:0.2s; font-size:1rem; }
-        .header-btn:hover, .header-btn.active { background:var(--accent); border-color:var(--accent); color:#000; box-shadow:0 4px 20px var(--accent-glow); }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
 
-        .user-trigger { display:flex; align-items:center; gap:10px; padding:6px 14px 6px 6px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:50px; cursor:pointer; transition:0.2s; position:relative; }
-        .user-trigger:hover { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.15); }
-        .user-avatar { width:32px; height:32px; border-radius:50%; background-size:cover; background-position:center; border:2px solid var(--accent); }
-        .user-name { font-weight:600; font-size:0.9rem; }
-        
-        .dropdown-menu { position:absolute; top:calc(100% + 8px); right:20px; width:220px; background:var(--surface-elevated); border:1px solid var(--border); border-radius:16px; overflow:hidden; opacity:0; visibility:hidden; transform:translateY(-10px); transition:0.2s; box-shadow:0 20px 50px rgba(0,0,0,0.5); z-index:200; }
-        .dropdown-menu.open { opacity:1; visibility:visible; transform:translateY(0); }
-        .dropdown-item { display:flex; align-items:center; gap:12px; padding:14px 18px; color:var(--text-secondary); font-size:0.9rem; cursor:pointer; transition:0.15s; }
-        .dropdown-item:hover { background:rgba(255,255,255,0.05); color:var(--text); }
-        .dropdown-item.danger { color:var(--danger); }
-        .dropdown-item.danger:hover { background:rgba(255,71,87,0.1); }
+        .bg-gradient {
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, var(--accent-glow), transparent),
+                radial-gradient(ellipse 60% 40% at 100% 0%, rgba(212, 175, 55, 0.05), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
 
-        /* ELO & POPUP */
-        .elo-wrapper { position:relative; display:inline-block; cursor:help; margin-right:8px; }
-        .elo-badge { background:var(--accent); color:#000; padding:2px 8px; border-radius:6px; font-size:0.8rem; font-weight:700; transition:0.3s; }
-        .elo-tooltip { visibility:hidden; width:200px; background:#222; color:#fff; text-align:center; border-radius:8px; padding:10px; border:1px solid var(--accent); position:absolute; top:140%; left:50%; transform:translateX(-50%); opacity:0; transition:0.3s; font-size:0.75rem; box-shadow:0 10px 30px rgba(0,0,0,0.8); pointer-events:none; z-index:300; }
-        .elo-wrapper:hover .elo-tooltip { visibility:visible; opacity:1; }
-        .elo-popup { position:absolute; top:-25px; left:50%; transform:translateX(-50%); font-weight:bold; font-size:0.9rem; opacity:0; pointer-events:none; transition:0.5s; white-space:nowrap; }
-        .elo-popup.show { top:-40px; opacity:1; }
-        .elo-gain { color:#00d26a; } 
-        .elo-loss { color:#ff4757; }
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
 
-        /* FEED */
-        .feed-section { position:relative; overflow:hidden; background:var(--bg); }
-        .feed-scroll { height:100%; overflow-y:scroll; scroll-snap-type:y mandatory; scroll-behavior:smooth; scrollbar-width:none; -ms-overflow-style:none; }
-        .feed-scroll::-webkit-scrollbar { display:none; }
-        .video-slide { height:100%; width:100%; scroll-snap-align:start; position:relative; display:flex; align-items:center; justify-content:center; background:#000; }
-        .video-container { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; }
-        .video-container video, .video-container iframe { width:100%; height:100%; object-fit:cover; pointer-events:none; }
-        
-        /* Add mute button styles */
-        .mute-btn { position:absolute; top:16px; right:16px; width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,0.5); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-size:1rem; color:#fff; cursor:pointer; z-index:20; transition:0.2s; }
-        .mute-btn:hover { background:rgba(0,0,0,0.7); transform:scale(1.05); }
-        .mute-btn.muted { color:var(--text-secondary); }
-        
-        .pause-indicator { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); width:80px; height:80px; background:rgba(0,0,0,0.5); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:rgba(255,255,255,0.9); pointer-events:none; opacity:0; transition:transform 0.15s ease, opacity 0.15s ease; z-index:20; }
-        .pause-indicator.show { transform:translate(-50%, -50%) scale(1); opacity:1; }
-        .pause-indicator.hide-anim { transform:translate(-50%, -50%) scale(1.3); opacity:0; }
-        
-        .video-creator { display:flex; align-items:center; gap:10px; margin-top:10px; pointer-events:auto; }
-        .video-creator-avatar { width:36px; height:36px; border-radius:50%; background-size:cover; background-position:center; border:2px solid var(--accent); cursor:pointer; transition:0.2s; }
-        .video-creator-avatar:hover { transform:scale(1.1); box-shadow:0 0 15px var(--accent-glow); }
-        .video-creator-info { display:flex; flex-direction:column; gap:2px; }
-        .video-creator-name { font-size:0.9rem; font-weight:600; color:var(--text); cursor:pointer; }
-        .video-creator-name:hover { color:var(--accent); }
-        .video-creator-date { font-size:0.7rem; color:var(--text-secondary); }
-        .video-description { font-size:0.85rem; color:var(--text-secondary); margin-top:6px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 72px;
+            background: rgba(9, 9, 11, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            z-index: 100;
+        }
 
-        .video-info { position:absolute; bottom:0; left:0; right:100px; padding:80px 24px 24px; background:linear-gradient(to top,rgba(0,0,0,0.95),rgba(0,0,0,0.6) 50%,transparent); pointer-events:none; }
-        .video-game-tag { display:inline-flex; align-items:center; gap:6px; background:var(--accent); color:#000; padding:6px 12px; border-radius:6px; font-weight:700; font-size:0.75rem; text-transform:uppercase; margin-bottom:12px; }
-        .video-title { font-size:1.2rem; font-weight:700; line-height:1.4; text-shadow:0 2px 10px rgba(0,0,0,0.5); }
+        .header-back {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 10px 16px;
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+        }
 
-        /* ACTIONS */
-        .side-actions { position:absolute; right:16px; bottom:24px; display:flex; flex-direction:column; align-items:center; gap:16px; z-index:10; }
-        .action-btn { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; transition:transform 0.2s; }
-        .action-btn:hover { transform:scale(1.1); }
-        .action-circle { width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.1); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-size:1.3rem; color:var(--text); transition:0.2s; }
-        .action-circle.active { box-shadow:0 0 20px currentColor; background:currentColor; color:#000 !important; border-color:currentColor; }
-        .vote-valid .active { color:var(--success); background:var(--success); }
-        .vote-inting .active { color:var(--danger); background:var(--danger); }
-        
-        .action-count { font-size:0.75rem; font-weight:600; transition:0.3s; }
-        .action-count.blind { filter:blur(6px); opacity:0.7; user-select:none; }
-        .action-btn.disabled { opacity:0.5; pointer-events:none; filter:grayscale(0.8); }
-        .action-btn.disabled.selected { opacity:1; filter:none; transform:scale(1.1); }
+        .header-back:hover { color: var(--text); background: var(--card); }
+        .header-back i { font-size: 0.85rem; }
 
-        /* CHAT */
-        .chat-sidebar { background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; transition:0.3s; }
-        .app-layout.chat-collapsed .chat-sidebar { opacity:0; pointer-events:none; }
-        .chat-header { padding:18px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
-        .chat-title { font-family:'Space Grotesk',sans-serif; font-weight:700; gap:8px; display:flex; align-items:center; }
-        .chat-title::before { content:''; width:8px; height:8px; background:var(--success); border-radius:50%; animation:pulse 2s infinite; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-        .chat-messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; }
-        .message { display:flex; flex-direction:column; gap:6px; animation:msgIn 0.3s ease; position:relative; }
-        @keyframes msgIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        .msg-header { display:flex; align-items:center; gap:10px; }
-        .msg-avatar { width:28px; height:28px; border-radius:50%; background-size:cover; background-position:center; border:1px solid var(--border); }
-        .msg-author { font-weight:600; font-size:0.85rem; color:var(--accent); }
-        .msg-text { padding-left:38px; font-size:0.9rem; line-height:1.5; }
-        .msg-system { text-align:center; font-size:0.8rem; color:var(--text-secondary); padding:8px; }
-        .msg-delete { margin-left:auto; color:var(--text-secondary); cursor:pointer; opacity:0; transition:0.2s; font-size:0.8rem; }
-        .message:hover .msg-delete { opacity:1; }
-        .msg-delete:hover { color:var(--danger); }
-        .msg-badges { position:relative; display:inline-block; }
-        .badge-main { font-size:0.65rem; background:rgba(255,255,255,0.08); border:1px solid var(--border); padding:3px 8px; border-radius:4px; color:var(--text-secondary); cursor:help; transition:0.2s; }
-        .msg-badges:hover .badge-main { color:var(--accent); border-color:var(--accent); background:rgba(212,175,55,0.1); }
-        .badge-popup { display:none; position:absolute; bottom:calc(100% + 8px); left:0; background:var(--surface-elevated); border:1px solid var(--accent); border-radius:10px; padding:10px 12px; min-width:130px; z-index:100; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
-        .msg-badges:hover .badge-popup { display:block; }
-        .badge-row { display:flex; justify-content:space-between; gap:12px; font-size:0.75rem; color:var(--text-secondary); padding:4px 0; }
-        .badge-row .rank { color:var(--accent); font-weight:600; }
-        
-        .chat-input-area { padding:16px; border-top:1px solid var(--border); display:flex; gap:10px; background:var(--surface); }
-        .chat-input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:14px; color:var(--text); outline:none; }
-        .chat-input:focus { border-color:var(--accent); }
-        .chat-send { width:48px; border-radius:12px; background:var(--accent); border:none; cursor:pointer; color:#000; display:flex; align-items:center; justify-content:center; }
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
 
-        /* Reply preview */
-        .msg-reply-preview { display:flex; align-items:center; gap:6px; padding:6px 10px; margin-left:38px; margin-bottom:4px; background:rgba(255,255,255,0.03); border-left:2px solid var(--accent); border-radius:0 8px 8px 0; font-size:0.75rem; color:var(--text-secondary); cursor:pointer; transition:0.2s; }
-        .msg-reply-preview:hover { background:rgba(255,255,255,0.06); }
-        .msg-reply-preview .reply-to-user { color:var(--accent); font-weight:600; }
-        .msg-reply-preview .reply-to-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px; }
-        
-        .msg-actions { display:flex; align-items:center; gap:12px; padding-left:38px; margin-top:4px; }
-        .msg-action-btn { display:flex; align-items:center; gap:4px; font-size:0.75rem; color:var(--text-secondary); cursor:pointer; transition:0.2s; padding:4px 8px; border-radius:6px; background:transparent; border:none; }
-        .msg-action-btn:hover { color:var(--text); background:rgba(255,255,255,0.05); }
-        .msg-action-btn.liked { color:#ff4757; }
-        .msg-action-btn.liked i { animation:likePopTikTok 0.3s ease; }
-        @keyframes likePopTikTok { 0%{transform:scale(1)} 50%{transform:scale(1.4)} 100%{transform:scale(1)} }
-        .msg-like-count { font-weight:500; }
-        
-        /* Reply dropdown toggle */
-        .msg-replies-toggle { display:flex; align-items:center; gap:6px; padding:6px 12px; margin-left:38px; margin-top:4px; font-size:0.75rem; color:var(--accent); cursor:pointer; background:rgba(212,175,55,0.05); border-radius:8px; transition:0.2s; }
-        .msg-replies-toggle:hover { background:rgba(212,175,55,0.1); }
-        .msg-replies-toggle i { transition:transform 0.2s; }
-        .msg-replies-toggle.expanded i { transform:rotate(180deg); }
-        .msg-replies-container { display:none; flex-direction:column; gap:10px; margin-left:38px; margin-top:8px; padding-left:12px; border-left:2px solid rgba(212,175,55,0.3); }
-        .msg-replies-container.expanded { display:flex; }
-        .msg-reply-item { display:flex; flex-direction:column; gap:4px; padding:8px; background:rgba(255,255,255,0.02); border-radius:8px; }
-        .msg-reply-item .msg-header { display:flex; align-items:center; gap:8px; }
-        .msg-reply-item .msg-avatar { width:22px; height:22px; }
-        .msg-reply-item .msg-author { font-size:0.8rem; }
-        .msg-reply-item .msg-text { padding-left:30px; font-size:0.85rem; }
-        
-        .reply-indicator { display:none; align-items:center; gap:10px; padding:10px 16px; background:rgba(212,175,55,0.1); border-top:1px solid var(--accent); font-size:0.8rem; }
-        .reply-indicator.active { display:flex; }
-        .reply-indicator-text { flex:1; color:var(--text-secondary); }
-        .reply-indicator-text span { color:var(--accent); font-weight:600; }
-        .reply-indicator-close { width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,0.1); border:none; color:var(--text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.7rem; transition:0.2s; }
-        .reply-indicator-close:hover { background:rgba(255,255,255,0.2); color:var(--text); }
-        
-        /* Video progress bar */
-        .video-progress-container { position:absolute; bottom:0; left:0; right:0; height:3px; background:rgba(255,255,255,0.2); z-index:15; cursor:pointer; }
-        .video-progress-bar { height:100%; background:#fff; width:0%; transition:none; border-radius:0 2px 2px 0; pointer-events:none; position:relative; }
-        /* Added progress thumb for better selection */
-        .video-progress-thumb { position:absolute; right:-6px; top:50%; transform:translateY(-50%); width:12px; height:12px; background:#fff; border-radius:50%; opacity:0; transition:opacity 0.2s; pointer-events:none; }
-        .video-progress-container:hover { height:6px; }
-        .video-progress-container:hover .video-progress-bar { background:var(--accent); }
-        .video-progress-container:hover .video-progress-thumb { opacity:1; background:var(--accent); }
-        .video-progress-container.dragging { height:8px; }
-        .video-progress-container.dragging .video-progress-bar { background:var(--accent); }
-        .video-progress-container.dragging .video-progress-thumb { opacity:1; background:var(--accent); width:16px; height:16px; right:-8px; }
-        
-        /* 2x Speed indicator */
-        .speed-indicator { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); background:rgba(0,0,0,0.7); border-radius:12px; padding:10px 18px; display:flex; align-items:center; gap:8px; font-size:0.9rem; font-weight:600; color:#fff; pointer-events:none; opacity:0; z-index:25; transition:all 0.2s ease; }
-        .speed-indicator.show { transform:translate(-50%, -50%) scale(1); opacity:1; }
-        .speed-indicator i { color:var(--accent); }
-        
-        /* Upload indicator - small corner */
-        .upload-indicator { position:fixed; top:80px; left:20px; background:var(--surface-elevated); border:1px solid var(--border); border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; z-index:500; box-shadow:0 4px 20px rgba(0,0,0,0.4); opacity:0; visibility:hidden; transform:scale(0.8); transition:all 0.3s cubic-bezier(0.4,0,0.2,1); }
-        .upload-indicator.show { opacity:1; visibility:visible; transform:scale(1); }
-        .upload-indicator .upload-icon { color:var(--accent); font-size:1rem; }
-        .upload-indicator.uploading .upload-icon { animation:uploadBounce 0.6s ease-in-out infinite; }
-        @keyframes uploadBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-        .upload-indicator.success { border-color:var(--success); background:var(--success); }
-        .upload-indicator.success .upload-icon { display:none; }
-        .upload-indicator .success-icon { display:none; color:#fff; font-size:1.1rem; }
-        .upload-indicator.success .success-icon { display:block; }
-        
-        /* MOBILE */
-        .mobile-nav { display:none; }
-        .mobile-elo-badge { display:none; position:fixed; top:16px; right:16px; z-index:50; background:var(--accent); color:#000; padding:6px 12px; border-radius:8px; font-size:0.85rem; font-weight:700; box-shadow:0 4px 15px rgba(0,0,0,0.3); }
-        .mobile-elo-popup { position:absolute; top:-30px; left:50%; transform:translateX(-50%); font-weight:bold; font-size:0.85rem; opacity:0; pointer-events:none; transition:0.5s; white-space:nowrap; }
-        .mobile-elo-popup.show { top:-35px; opacity:1; }
-        
-        /* Mobile mute button */
-        .mobile-mute-btn { position:fixed; top:16px; left:16px; width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,0.5); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.15); display:none; align-items:center; justify-content:center; font-size:1rem; color:#fff; cursor:pointer; z-index:50; transition:0.2s; }
-        .mobile-mute-btn.muted { color:var(--text-secondary); }
-        
-        /* Hide mobile chat elements on desktop */
-        .mobile-chat { display:none; }
+        .logo span {
+            background: linear-gradient(135deg, var(--accent) 0%, #f5d98a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .main {
+            position: relative;
+            z-index: 1;
+            padding: 120px 24px 80px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .page-header { text-align: center; margin-bottom: 48px; }
+
+        .page-header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2rem, 5vw, 2.8rem);
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 12px;
+        }
+
+        .page-header h1 span {
+            background: linear-gradient(135deg, var(--accent) 0%, #f5d98a 50%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header p { color: var(--text-muted); font-size: 1.05rem; }
+
+        /* Tabs navigation */
+        .profile-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            background: var(--card);
+            padding: 6px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+        }
+
+        .profile-tab {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .profile-tab:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+
+        .profile-tab.active {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .profile-tab i { font-size: 1rem; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Avatar Section */
+        .avatar-card {
+            background: linear-gradient(135deg, var(--card) 0%, var(--bg-elevated) 100%);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 40px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .avatar-wrapper {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .avatar-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent) 0%, #f5d98a 50%, var(--accent) 100%);
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+
+        .avatar-wrapper:hover .avatar-ring {
+            inset: -6px;
+            opacity: 1;
+            box-shadow: 0 0 40px var(--accent-glow);
+        }
+
+        .avatar-inner {
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            background: var(--bg);
+            overflow: hidden;
+        }
+
+        .avatar-inner img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+        .avatar-wrapper:hover .avatar-inner img { transform: scale(1.05); }
+
+        .avatar-overlay {
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .avatar-wrapper:hover .avatar-overlay { opacity: 1; }
+        .avatar-overlay i { font-size: 1.5rem; color: var(--accent); }
+        .avatar-overlay span { font-size: 0.75rem; color: var(--text); font-weight: 500; }
+
+        .avatar-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent-soft);
+            border: 1px solid var(--border-accent);
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .avatar-badge i { font-size: 0.75rem; }
+
+        /* Section Cards */
+        .section-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 32px;
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .section-card:hover { border-color: rgba(255,255,255,0.1); }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-md);
+            background: var(--accent-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .section-header p { color: var(--text-dim); font-size: 0.85rem; margin-top: 2px; }
+
+        .section-card.danger { border-color: rgba(239, 68, 68, 0.15); }
+        .section-card.danger .section-icon { background: var(--danger-soft); color: var(--danger); }
+        .section-card.danger .section-header { border-color: rgba(239, 68, 68, 0.1); }
+
+        /* Form Elements */
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group:last-child { margin-bottom: 0; }
+
+        label { display: block; margin-bottom: 10px; color: var(--text-muted); font-size: 0.875rem; font-weight: 500; }
+
+        input, textarea, select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            color: var(--text);
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input::placeholder, textarea::placeholder { color: var(--text-dim); }
+        input:hover, textarea:hover, select:hover { border-color: rgba(255,255,255,0.15); }
+        input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+        textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 44px;
+        }
+
+        /* Games Section */
+        .games-grid { display: flex; flex-direction: column; gap: 12px; }
+
+        .game-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg);
+            padding: 16px 20px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .game-row:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.02); }
+        .game-row.active { border-color: var(--border-accent); background: var(--accent-soft); }
+
+        .game-check { display: flex; align-items: center; gap: 16px; }
+
+        .custom-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--text-dim);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .game-row.active .custom-checkbox { background: var(--accent); border-color: var(--accent); }
+        .custom-checkbox i { font-size: 0.7rem; color: var(--bg); display: none; }
+        .game-row.active .custom-checkbox i { display: block; }
+
+        .game-info { display: flex; flex-direction: column; gap: 2px; }
+        .game-name { font-weight: 600; font-size: 0.95rem; }
+        .game-subtitle { font-size: 0.8rem; color: var(--text-dim); }
+
+        .rank-select {
+            width: 140px;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            display: none;
+            background: var(--card);
+        }
+
+        .game-row.active .rank-select { display: block; }
+
+        /* Save Button */
+        .btn-save {
+            width: 100%;
+            padding: 18px 32px;
+            background: linear-gradient(135deg, var(--accent) 0%, #c9a227 100%);
+            border: none;
+            border-radius: var(--radius-lg);
+            color: #000;
+            font-weight: 700;
+            font-size: 1rem;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-save::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(212, 175, 55, 0.3); }
+        .btn-save:hover::before { transform: translateX(100%); }
+        .btn-save:active { transform: translateY(0); }
+        .btn-save:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+        /* Videos Grid for "Mes Videos" tab */
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .video-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .video-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+
+        .video-card-thumbnail {
+            position: relative;
+            width: 100%;
+            padding-top: 177.78%; /* 9:16 aspect ratio */
+            background: var(--bg);
+            overflow: hidden;
+        }
+
+        .video-card-thumbnail video,
+        .video-card-thumbnail img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-card-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%);
+            display: flex;
+            align-items: flex-end;
+            padding: 16px;
+        }
+
+        .video-card-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 0.8rem;
+            color: var(--text);
+        }
+
+        .video-card-stats span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .video-card-stats .valid { color: var(--success); }
+        .video-card-stats .inting { color: var(--danger); }
+
+        .video-card-info { padding: 16px; }
+
+        .video-card-game {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .video-card-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-card-date {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .empty-videos {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-videos i {
+            font-size: 3rem;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+        }
+
+        .empty-videos h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .empty-videos p { font-size: 0.9rem; }
+
+        .empty-videos .btn-create {
+            margin-top: 24px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 28px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .empty-videos .btn-create:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--accent-glow);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--success);
+            color: #000;
+            padding: 16px 28px;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 200;
+            box-shadow: 0 10px 40px rgba(34, 197, 94, 0.3);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast i { font-size: 1.1rem; }
+
+        .loading { opacity: 0.5; pointer-events: none; }
+
         @media (max-width: 768px) {
-            .app-layout { grid-template-columns:1fr; grid-template-rows:1fr; } 
-            .header, .chat-sidebar { display:none; }
-            .mobile-elo-badge { display:block; }
-            /* Show mobile mute button */
-            .mobile-mute-btn { display:flex; }
-            .mute-btn { display:none; }
-            .mobile-nav { display:block; position:fixed; bottom:0; width:100%; height:70px; background:rgba(0,0,0,0.95); backdrop-filter:blur(20px); border-top:1px solid var(--border); z-index:100; padding-bottom:env(safe-area-inset-bottom); }
-            .nav-items { display:flex; justify-content:space-around; align-items:center; height:100%; max-width:400px; margin:0 auto; }
-            .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--text-secondary); cursor:pointer; font-size:1.3rem; padding:8px; }
-            .nav-item.active { color:var(--text); }
-            .nav-item span { font-size:0.65rem; font-weight:500; }
-            .nav-create { width:48px; height:36px; background:linear-gradient(135deg,var(--accent) 0%,#f0d77c 100%); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#000; font-size:1.2rem; }
-            .feed-section { height:100%; padding-bottom:70px; }
-            .video-info { right:60px; padding:16px; padding-top:20px; background:none; }
-            .video-creator { margin-top:6px; }
-            .video-creator-avatar { width:30px; height:30px; }
-            .video-creator-name { font-size:0.85rem; }
-            .video-creator-date { font-size:0.65rem; }
-            .video-description { font-size:0.8rem; -webkit-line-clamp:1; }
-            .side-actions { bottom:100px; right:10px; gap:12px; }
-            .action-circle { width:40px; height:40px; font-size:1rem; }
-            .action-count { font-size:0.65rem; }
-            .pause-indicator { width:60px; height:60px; font-size:1.5rem; }
-            
-            .mobile-chat { display:flex; position:fixed; bottom:0; width:100%; height:75vh; background:var(--surface); border-radius:24px 24px 0 0; z-index:200; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); flex-direction:column; touch-action:none; }
-            .mobile-chat.open { transform:translateY(0); }
-            .mobile-chat .chat-messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; min-height:0; }
-            .mobile-chat-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:199; opacity:0; visibility:hidden; transition:0.3s; }
-            .mobile-chat-overlay.open { opacity:1; visibility:visible; }
-            .mobile-chat-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-            .mobile-chat-header h3 { font-size:1rem; font-weight:700; }
-            .mobile-chat-drag-handle { width:40px; height:4px; background:var(--text-secondary); border-radius:2px; margin:0 auto 8px; opacity:0.5; }
-            .mobile-chat .chat-input-area { flex-shrink:0; padding-bottom:env(safe-area-inset-bottom,16px); }
-            .upload-indicator { top:16px; left:16px; width:40px; height:40px; }
-            .upload-indicator .upload-icon { font-size:0.8rem; }
+            .header { padding: 0 20px; }
+            .main { padding: 100px 16px 60px; }
+            .avatar-card, .section-card { padding: 24px; }
+            .section-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .profile-tabs { flex-direction: column; }
+            .videos-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
         }
 
-        /* MODAL */
-        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:300; display:flex; align-items:center; justify-content:center; opacity:0; visibility:hidden; transition:0.3s; }
-        .modal-overlay.open { opacity:1; visibility:visible; }
-        .modal-content { width:100%; max-width:420px; background:var(--surface-elevated); border:1px solid var(--border); border-radius:24px; padding:28px; transform:scale(0.9); transition:0.3s; }
-        .modal-overlay.open .modal-content { transform:scale(1); }
-        .btn-primary { width:100%; padding:16px; background:var(--accent); border:none; border-radius:12px; font-weight:700; cursor:pointer; margin-top:10px; color:#000; }
-        .btn-primary:hover { box-shadow:0 4px 20px var(--accent-glow); }
-        
-        /* Upload Zone Fix */
-        .upload-zone { 
-            border:2px dashed var(--border); 
-            border-radius:12px; 
-            padding:40px 20px; 
-            text-align:center; 
-            cursor:pointer; 
-            transition:0.2s; 
-            margin-bottom:16px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            justify-content:center;
-            gap:12px;
+        @media (max-width: 480px) {
+            .videos-grid { grid-template-columns: 1fr; }
         }
-        .upload-zone:hover { border-color:var(--accent); background:rgba(212,175,55,0.05); }
-        .upload-zone i { font-size:2rem; color:var(--accent); }
-        .upload-zone span { color:var(--text-secondary); font-size:0.9rem; }
-        .dropdown-divider { height:1px; background:var(--border); margin:4px 0; }
     </style>
 </head>
 <body>
+    <div class="bg-gradient"></div>
+    <div class="bg-grid"></div>
 
-<!-- Upload indicator - small corner icon -->
-<div class="upload-indicator" id="uploadIndicator">
-    <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
-    <i class="fa-solid fa-check success-icon"></i>
-</div>
-
-<!-- Mobile ELO badge -->
-<div class="mobile-elo-badge" id="mobileEloBadge">
-    <span id="mobileEloValue">1000</span>
-    <div class="mobile-elo-popup" id="mobileEloPopup">+10</div>
-</div>
-
-<!-- Added mobile mute button -->
-<div class="mobile-mute-btn muted" id="mobileMuteBtn" onclick="toggleMobileMute()">
-    <i class="fa-solid fa-volume-xmark"></i>
-</div>
-
-<div class="app-layout" id="appLayout">
     <header class="header">
-        <a href="#" class="logo">
-            <div class="logo-icon"><i class="fa-solid fa-bolt"></i></div>
-            DEBATE<span>ROOM</span>
+        <a href="index.html" class="header-back">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Retour</span>
         </a>
-        <div class="header-actions">
-            <button class="header-btn" onclick="openCreateModal()"><i class="fa-solid fa-plus"></i></button>
-            <button class="header-btn" id="chatToggleBtn" onclick="toggleDesktopChat()"><i class="fa-solid fa-message"></i></button>
-            <div class="user-menu">
-                <div class="user-trigger" onclick="toggleUserMenu()">
-                    <div class="elo-wrapper">
-                        <span id="headerElo" class="elo-badge">1000</span>
-                        <div class="elo-popup" id="eloPopup">+10</div>
-                        <div class="elo-tooltip">
-                            <strong>Score de Juge</strong><br>
-                            <span class="elo-gain">+10</span> si tu as raison<br>
-                            <span class="elo-loss">-5</span> si tu as tort
-                        </div>
-                    </div>
-                    <div class="user-avatar" id="headerAvatar"></div>
-                    <span class="user-name" id="headerName">...</span>
-                    <i class="fa-solid fa-chevron-down user-chevron"></i>
-                </div>
-                <div class="dropdown-menu" id="userDropdown">
-                    <div class="dropdown-item" onclick="location.href='editprofile.html'"><i class="fa-solid fa-user-pen"></i> Profil</div>
-                    <div class="dropdown-divider"></div>
-                    <div class="dropdown-item danger" onclick="logout()"><i class="fa-solid fa-power-off"></i> Deconnexion</div>
-                </div>
-            </div>
-        </div>
+        <div class="logo">DEBATE<span>ROOM</span></div>
+        <div style="width: 100px;"></div>
     </header>
 
-    <main class="feed-section">
-        <div class="feed-scroll" id="feedScroll"></div>
-    </main>
+    <main class="main">
+        <div class="page-header">
+            <h1>Mon <span>Profil</span></h1>
+            <p>Personnalisez votre identite et vos preferences</p>
+        </div>
 
-    <aside class="chat-sidebar" id="chatSidebar">
-        <div class="chat-header">
-            <div class="chat-title">Live Chat</div>
-            <button class="header-btn" onclick="shareCurrentRoom()" style="width:auto; padding:0 14px; font-size:0.8rem; height:36px;">
-                <i class="fa-solid fa-share"></i>&nbsp;Partager
+        <!-- Tabs Navigation -->
+        <div class="profile-tabs">
+            <button class="profile-tab active" onclick="switchTab('profile')">
+                <i class="fa-solid fa-user"></i>
+                Mon Profil
+            </button>
+            <button class="profile-tab" onclick="switchTab('videos')">
+                <i class="fa-solid fa-video"></i>
+                Mes Videos
             </button>
         </div>
-        <div class="chat-messages" id="desktopChatMessages">
-            <div class="msg-system">Selectionnez un debat</div>
-        </div>
-        <!-- Desktop Chat Input with Reply Indicator -->
-        <div id="desktopReplyIndicator" class="reply-indicator">
-            <div class="reply-indicator-text">Repondre a <span></span></div>
-            <button class="reply-indicator-close" onclick="cancelReply('desktop')"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="chat-input-area">
-            <input type="text" class="chat-input" id="desktopChatInput" placeholder="Votre avis..." onkeypress="if(event.key==='Enter')sendDesktopMessage()">
-            <button class="chat-send" onclick="sendDesktopMessage()"><i class="fa-solid fa-paper-plane"></i></button>
-        </div>
-    </aside>
-</div>
 
-<!-- Mobile Navigation -->
-<nav class="mobile-nav">
-    <div class="nav-items">
-        <div class="nav-item active"><i class="fa-solid fa-house"></i><span>Accueil</span></div>
-        <div class="nav-item"><i class="fa-solid fa-compass"></i><span>Explorer</span></div>
-        <div class="nav-item" onclick="openCreateModal()">
-            <div class="nav-create"><i class="fa-solid fa-plus"></i></div>
+        <!-- Profile Tab Content -->
+        <div id="profileTab" class="tab-content active">
+            <!-- Avatar Section -->
+            <div class="avatar-card">
+                <div class="avatar-wrapper" onclick="document.getElementById('fileInput').click()">
+                    <div class="avatar-ring"></div>
+                    <div class="avatar-inner">
+                        <img id="previewAvatar" src="/placeholder.svg" alt="Avatar">
+                    </div>
+                    <div class="avatar-overlay">
+                        <i class="fa-solid fa-camera"></i>
+                        <span>Modifier</span>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="uploadAvatar()">
+                <div class="avatar-badge">
+                    <i class="fa-solid fa-sparkles"></i>
+                    Cliquez pour changer votre avatar
+                </div>
+            </div>
+
+            <!-- Identity Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                        <h2>Identite</h2>
+                        <p>Vos informations personnelles</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Prenom</label>
+                        <input type="text" id="prenom" placeholder="Votre prenom">
+                    </div>
+                    <div class="form-group">
+                        <label>Nom</label>
+                        <input type="text" id="nom" placeholder="Votre nom">
+                    </div>
+                    <div class="form-group full">
+                        <label>Pseudo (Affiche publiquement)</label>
+                        <input type="text" id="pseudo" placeholder="Votre pseudo en jeu">
+                    </div>
+                    <div class="form-group full">
+                        <label>Bio</label>
+                        <textarea id="bio" placeholder="Parlez-nous de vous, vos jeux preferes, votre style de jeu..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Games Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fa-solid fa-gamepad"></i>
+                    </div>
+                    <div>
+                        <h2>Mes Jeux & Rangs</h2>
+                        <p>Selectionnez vos jeux et indiquez votre niveau</p>
+                    </div>
+                </div>
+                <div class="games-grid" id="gamesContainer"></div>
+            </div>
+
+            <!-- Security Section -->
+            <div class="section-card danger">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h2>Securite</h2>
+                        <p>Modifiez votre mot de passe</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nouveau mot de passe</label>
+                        <input type="password" id="newPass" placeholder="Laisser vide si inchange">
+                    </div>
+                    <div class="form-group">
+                        <label>Mot de passe actuel (requis pour changer)</label>
+                        <input type="password" id="oldPass" placeholder="Votre mot de passe actuel">
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-save" onclick="saveProfile()">
+                SAUVEGARDER LES MODIFICATIONS
+            </button>
         </div>
-        <div class="nav-item"><i class="fa-solid fa-bell"></i><span>Notifs</span></div>
-        <div class="nav-item" onclick="location.href='editprofile.html'"><i class="fa-solid fa-user"></i><span>Profil</span></div>
+
+        <!-- Videos Tab Content -->
+        <div id="videosTab" class="tab-content">
+            <div class="videos-grid" id="videosGrid">
+                <!-- Videos will be loaded dynamically -->
+            </div>
+            <div class="empty-videos" id="emptyVideos" style="display:none;">
+                <i class="fa-solid fa-video-slash"></i>
+                <h3>Aucune video publiee</h3>
+                <p>Vous n'avez pas encore publie de debat</p>
+                <a href="index.html" class="btn-create">
+                    <i class="fa-solid fa-plus"></i>
+                    Creer mon premier debat
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <div class="toast" id="toast">
+        <i class="fa-solid fa-check-circle"></i>
+        Profil mis a jour avec succes !
     </div>
-</nav>
 
-<!-- Mobile Chat Modal -->
-<div class="mobile-chat-overlay" id="mobileChatOverlay" onclick="closeMobileChat()"></div>
-<div class="mobile-chat" id="mobileChat">
-    <div class="mobile-chat-drag-handle"></div>
-    <div class="mobile-chat-header">
-        <h3>Commentaires</h3>
-        <button class="header-btn" onclick="closeMobileChat()" style="width:32px;height:32px;border-radius:50%;">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-    </div>
-    <div class="chat-messages" id="mobileChatMessages"></div>
-    <!-- Mobile Chat Input with Reply Indicator -->
-    <div id="mobileReplyIndicator" class="reply-indicator">
-        <div class="reply-indicator-text">Repondre a <span></span></div>
-        <button class="reply-indicator-close" onclick="cancelReply('mobile')"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="chat-input-area">
-        <input type="text" class="chat-input" id="mobileChatInput" placeholder="Ajouter un commentaire..." onkeypress="if(event.key==='Enter')sendMobileMessage()">
-        <button class="chat-send" onclick="sendMobileMessage()"><i class="fa-solid fa-paper-plane"></i></button>
-    </div>
-</div>
+    <script>
+        // AUTH & DATA
+        const rawUser = localStorage.getItem('user_profile');
+        if(!rawUser) window.location.href = 'login.html';
+        let user = JSON.parse(rawUser);
 
-<!-- Create Modal -->
-<div class="modal-overlay" id="createModal">
-    <div class="modal-content">
-        <h2 style="font-family:'Space Grotesk',sans-serif; margin-bottom:20px; font-weight:700;">Nouveau Debat</h2>
-        <div style="margin-bottom:15px;">
-            <label style="display:block; margin-bottom:8px; color:var(--text-secondary); font-size:0.85rem;">Jeu</label>
-            <select class="chat-input" id="newGameSelect" style="width:100%;">
-                <option value="lol">League of Legends</option>
-                <option value="valorant">Valorant</option>
-                <option value="rl">Rocket League</option>
-            </select>
-        </div>
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <button class="header-btn" id="tabLinkBtn" onclick="switchUploadTab('link')" style="flex:1; background:var(--accent); color:#000;">Lien</button>
-            <button class="header-btn" id="tabFileBtn" onclick="switchUploadTab('file')" style="flex:1;">Fichier</button>
-        </div>
-        <div id="linkInputGroup">
-            <input type="text" class="chat-input" id="newLinkInput" placeholder="Lien YouTube, TikTok..." style="width:100%;">
-        </div>
-        <!-- File upload zone - Fixed layout structure -->
-        <div id="fileInputGroup" style="display:none;">
-            <label class="upload-zone" for="videoFileInput">
-                <i class="fa-solid fa-cloud-arrow-up"></i>
-                <span id="uploadFileName">Choisir une video</span>
-            </label>
-            <input type="file" id="videoFileInput" accept="video/*" style="display:none;" onchange="handleFileSelect()">
-        </div>
-        <div style="margin-top:15px;">
-            <label style="display:block; margin-bottom:8px; color:var(--text-secondary); font-size:0.85rem;">Titre</label>
-            <input type="text" class="chat-input" id="newVideoTitle" placeholder="Titre de votre debat..." style="width:100%;">
-        </div>
-        <div style="margin-top:15px;">
-            <label style="display:block; margin-bottom:8px; color:var(--text-secondary); font-size:0.85rem;">Description (optionnel)</label>
-            <textarea class="chat-input" id="newVideoDescription" placeholder="Decrivez la situation..." style="width:100%; min-height:80px; resize:vertical;"></textarea>
-        </div>
-        <button class="btn-primary" id="publishBtn" onclick="createRoom()">PUBLIER</button>
-        <button style="width:100%; padding:12px; background:none; border:none; color:var(--text-secondary); cursor:pointer; margin-top:8px;" onclick="closeCreateModal()">Annuler</button>
-    </div>
-</div>
+        const gameData = {
+            'lol': { name: 'League of Legends', subtitle: 'MOBA', ranks: ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','Grandmaster','Challenger'] },
+            'valorant': { name: 'Valorant', subtitle: 'FPS Tactique', ranks: ['Iron','Bronze','Silver','Gold','Platinum','Diamond','Ascendant','Immortal','Radiant'] },
+            'rl': { name: 'Rocket League', subtitle: 'Sport Automobile', ranks: ['Bronze','Silver','Gold','Platinum','Diamond','Champion','Grand Champion','SSL'] },
+            'fortnite': { name: 'Fortnite', subtitle: 'Battle Royale', ranks: ['Bronze','Silver','Gold','Platinum','Diamond','Elite','Champion','Unreal'] }
+        };
 
-<script>
-    // ==========================================
-    // AUTHENTIFICATION
-    // ==========================================
-    const rawUser = localStorage.getItem('user_profile');
-    if (!rawUser) window.location.href = 'login.html';
-    const user = JSON.parse(rawUser);
-    
-    const userAvatarUrl = user.avatar || user.picture || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
-    
-    document.getElementById('headerName').innerText = user.pseudo || user.given_name || user.name;
-    document.getElementById('headerAvatar').style.backgroundImage = `url('${userAvatarUrl}')`;
-    document.getElementById('headerElo').innerText = user.elo || 1000;
-    document.getElementById('mobileEloValue').innerText = user.elo || 1000;
-
-    // ==========================================
-    // SOCKET.IO CONNECTION
-    // ==========================================
-    const socket = io("https://debateroom-u1gz.onrender.com");
-    let currentRoomId = null;
-    let currentChatMessages = [];
-    let viewedRooms = JSON.parse(localStorage.getItem('viewedRooms') || '[]');
-    let replyingTo = null;
-    const urlParams = new URLSearchParams(window.location.search);
-    const startRoom = urlParams.get('room');
-
-    // ==========================================
-    // VIDEO PLAYER HELPER
-    // ==========================================
-    let globalMuted = localStorage.getItem('videoMuted') !== 'false'; // Default muted
-    
-    function getPlayerHTML(room) {
-        const mutedAttr = globalMuted ? 'muted' : '';
-        const muteIcon = globalMuted ? 'fa-volume-xmark' : 'fa-volume-high';
-        const muteClass = globalMuted ? 'muted' : '';
-        
-        if (room.videoUrl.includes('youtube.com/embed')) {
-            return `<iframe src="${room.videoUrl}" style="width:100%;height:100%;border:none;" allow="autoplay"></iframe>`;
-        }
-        if (room.videoUrl.includes('tiktok.com/embed')) {
-            return `<div style="width:100%;height:100%;background:#000;display:flex;align-items:center;justify-content:center;">
-                <iframe src="${room.videoUrl}" style="width:100%;height:120%;border:none;transform:scale(1.1);"></iframe>
-            </div>`;
-        }
-        return `<video src="${room.videoUrl}" loop playsinline autoplay ${mutedAttr} style="width:100%;height:100%;object-fit:cover;"></video>
-                <div class="mute-btn ${muteClass}" onclick="toggleMute(event, this)"><i class="fa-solid ${muteIcon}"></i></div>
-                <div class="pause-indicator"><i class="fa-solid fa-pause"></i></div>
-                <div class="speed-indicator"><i class="fa-solid fa-forward-fast"></i> 2x</div>
-                <div class="video-progress-container">
-                    <div class="video-progress-bar"><div class="video-progress-thumb"></div></div>
-                </div>`;
-    }
-
-    // ==========================================
-    // TAP TO PAUSE & 2X SPEED & MUTE
-    window.toggleMute = (e, btn) => {
-        e.stopPropagation();
-        globalMuted = !globalMuted;
-        localStorage.setItem('videoMuted', globalMuted ? 'true' : 'false');
-        
-        // Update all videos
-        document.querySelectorAll('.video-slide video').forEach(video => {
-            video.muted = globalMuted;
-        });
-        
-        // Update all mute buttons
-        document.querySelectorAll('.mute-btn').forEach(muteBtn => {
-            const icon = muteBtn.querySelector('i');
-            if (globalMuted) {
-                muteBtn.classList.add('muted');
-                icon.className = 'fa-solid fa-volume-xmark';
+        // TAB SWITCHING
+        function switchTab(tab) {
+            document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            if (tab === 'profile') {
+                document.querySelector('.profile-tab:first-child').classList.add('active');
+                document.getElementById('profileTab').classList.add('active');
             } else {
-                muteBtn.classList.remove('muted');
-                icon.className = 'fa-solid fa-volume-high';
-            }
-        });
-        
-        updateMobileMuteBtn();
-    };
-    
-    window.toggleMobileMute = () => {
-        globalMuted = !globalMuted;
-        localStorage.setItem('videoMuted', globalMuted ? 'true' : 'false');
-        
-        document.querySelectorAll('.video-slide video').forEach(video => {
-            video.muted = globalMuted;
-        });
-        
-        document.querySelectorAll('.mute-btn').forEach(muteBtn => {
-            const icon = muteBtn.querySelector('i');
-            if (globalMuted) {
-                muteBtn.classList.add('muted');
-                icon.className = 'fa-solid fa-volume-xmark';
-            } else {
-                muteBtn.classList.remove('muted');
-                icon.className = 'fa-solid fa-volume-high';
-            }
-        });
-        
-        updateMobileMuteBtn();
-    };
-    
-    function updateMobileMuteBtn() {
-        const btn = document.getElementById('mobileMuteBtn');
-        if (btn) {
-            const icon = btn.querySelector('i');
-            if (globalMuted) {
-                btn.classList.add('muted');
-                icon.className = 'fa-solid fa-volume-xmark';
-            } else {
-                btn.classList.remove('muted');
-                icon.className = 'fa-solid fa-volume-high';
+                document.querySelector('.profile-tab:last-child').classList.add('active');
+                document.getElementById('videosTab').classList.add('active');
+                loadMyVideos();
             }
         }
-    }
-    
-    // ==========================================
-    // TAP TO PAUSE & 2X SPEED
-    function setupTapToPause(slide) {
-        const container = slide.querySelector('.video-container');
-        const video = slide.querySelector('video');
-        const pauseIndicator = slide.querySelector('.pause-indicator');
-        const speedIndicator = slide.querySelector('.speed-indicator');
-        const progressContainer = slide.querySelector('.video-progress-container');
-        const progressBar = slide.querySelector('.video-progress-bar');
-        const progressThumb = slide.querySelector('.video-progress-thumb'); // Get the thumb
-        const muteBtn = slide.querySelector('.mute-btn');
-        
-        if (!video) return;
-        
-        let holdTimer = null;
-        let isSpeedUp = false;
-        let isDraggingProgress = false;
 
-        // Progress bar drag functionality
-        if (progressContainer) {
-            const updateProgress = (e) => {
-                const rect = progressContainer.getBoundingClientRect();
-                const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
-                const percent = Math.max(0, Math.min(1, x / rect.width));
-                video.currentTime = percent * video.duration;
-                progressBar.style.width = (percent * 100) + '%';
-                // Update thumb position as well
-                progressThumb.style.left = (percent * 100) + '%';
+        // LOAD MY VIDEOS
+        async function loadMyVideos() {
+            const grid = document.getElementById('videosGrid');
+            const empty = document.getElementById('emptyVideos');
+            
+            grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;"><i class="fa-solid fa-spinner fa-spin" style="font-size:2rem;"></i><p style="margin-top:12px;">Chargement...</p></div>';
+            
+            try {
+                const res = await fetch(`https://debateroom-u1gz.onrender.com/api/feed/user-videos?email=${user.email}`);
+                const videos = await res.json();
+                
+                console.log("[v0] User videos loaded:", videos);
+                
+                if (!videos || videos.length === 0) {
+                    grid.innerHTML = '';
+                    empty.style.display = 'block';
+                    return;
+                }
+                
+                empty.style.display = 'none';
+                grid.innerHTML = '';
+                
+                videos.forEach(video => {
+                    const validCount = video.votes?.valid?.length || 0;
+                    const intingCount = video.votes?.inting?.length || 0;
+                    const date = new Date(video.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                    
+                    const card = document.createElement('div');
+                    card.className = 'video-card';
+                    card.onclick = () => window.location.href = `index.html?room=${video.slug}`;
+                    
+                    // Determine thumbnail - use video element for mp4, placeholder for embeds
+                    let thumbnailHTML = '';
+                    if (video.videoUrl.includes('youtube.com') || video.videoUrl.includes('tiktok.com')) {
+                        thumbnailHTML = `<img src="/placeholder.svg?height=400&width=225" alt="thumbnail">`;
+                    } else {
+                        thumbnailHTML = `<video src="${video.videoUrl}" muted></video>`;
+                    }
+                    
+                    card.innerHTML = `
+                        <div class="video-card-thumbnail">
+                            ${thumbnailHTML}
+                            <div class="video-card-overlay">
+                                <div class="video-card-stats">
+                                    <span class="valid"><i class="fa-solid fa-check"></i> ${validCount}</span>
+                                    <span class="inting"><i class="fa-solid fa-xmark"></i> ${intingCount}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="video-card-info">
+                            <span class="video-card-game"><i class="fa-solid fa-gamepad"></i> ${video.game}</span>
+                            <h4 class="video-card-title">${video.videoTitle}</h4>
+                            <p class="video-card-date">${date}</p>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch(e) {
+                console.error("[v0] Error loading videos:", e);
+                grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger);grid-column:1/-1;">Erreur de chargement</div>';
+            }
+        }
+
+        // INIT PROFILE
+        function init() {
+            document.getElementById('previewAvatar').src = user.picture || user.avatar || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+            
+            const fullName = user.name || "";
+            const parts = fullName.split(' ');
+            document.getElementById('prenom').value = parts[0] || "";
+            document.getElementById('nom').value = parts.slice(1).join(' ') || "";
+            document.getElementById('pseudo').value = user.given_name || user.pseudo || "";
+            document.getElementById('bio').value = user.bio || "";
+
+            renderGamesUI(user.games || [], user.details || {});
+        }
+
+        function renderGamesUI(userGames, userDetails) {
+            const container = document.getElementById('gamesContainer');
+            container.innerHTML = '';
+            for (const [key, data] of Object.entries(gameData)) {
+                const isActive = userGames.includes(key);
+                const userRank = (userDetails[key] && userDetails[key].rank) ? userDetails[key].rank : "Unranked";
+                
+                const row = document.createElement('div');
+                row.className = `game-row ${isActive ? 'active' : ''}`;
+                row.id = `game-${key}`;
+                row.onclick = (e) => { if(e.target.tagName !== 'SELECT') toggleGame(key); };
+
+                let options = `<option value="Unranked" ${userRank === 'Unranked' ? 'selected' : ''}>Unranked</option>`;
+                data.ranks.forEach(r => {
+                    options += `<option value="${r}" ${userRank === r ? 'selected' : ''}>${r}</option>`;
+                });
+
+                row.innerHTML = `
+                    <div class="game-check">
+                        <div class="custom-checkbox"><i class="fa-solid fa-check"></i></div>
+                        <div class="game-info">
+                            <span class="game-name">${data.name}</span>
+                            <span class="game-subtitle">${data.subtitle}</span>
+                        </div>
+                    </div>
+                    <select class="rank-select" id="rank-${key}" onclick="event.stopPropagation()">${options}</select>
+                `;
+                container.appendChild(row);
+            }
+        }
+
+        function toggleGame(key) {
+            const row = document.getElementById(`game-${key}`);
+            row.classList.toggle('active');
+        }
+
+        // UPLOAD AVATAR
+        let newAvatarUrl = null;
+        async function uploadAvatar() {
+            const file = document.getElementById('fileInput').files[0];
+            if(!file) return;
+            
+            const fd = new FormData();
+            fd.append('videoFile', file);
+
+            try {
+                document.querySelector('.avatar-wrapper').classList.add('loading');
+                const res = await fetch('https://debateroom-u1gz.onrender.com/api/video/upload', {
+                    method: 'POST', body: fd
+                });
+                const data = await res.json();
+                if(data.src) {
+                    newAvatarUrl = data.src;
+                    document.getElementById('previewAvatar').src = newAvatarUrl;
+                } else {
+                    alert("Erreur lors de l'upload de l'image.");
+                }
+            } catch(e) { 
+                alert("Erreur de connexion pour l'upload.");
+            }
+            finally { document.querySelector('.avatar-wrapper').classList.remove('loading'); }
+        }
+
+        // SAVE PROFILE
+        async function saveProfile() {
+            const btn = document.querySelector('.btn-save');
+            btn.innerText = "Sauvegarde en cours..."; btn.disabled = true;
+
+            const activeGames = [];
+            const details = {};
+            document.querySelectorAll('.game-row.active').forEach(row => {
+                const key = row.id.replace('game-', '');
+                activeGames.push(key);
+                details[key] = { rank: document.getElementById(`rank-${key}`).value };
+            });
+
+            const payload = {
+                email: user.email,
+                prenom: document.getElementById('prenom').value,
+                nom: document.getElementById('nom').value,
+                pseudo: document.getElementById('pseudo').value,
+                bio: document.getElementById('bio').value,
+                currentPassword: document.getElementById('oldPass').value,
+                newPassword: document.getElementById('newPass').value,
+                games: activeGames,
+                details: details
             };
 
-            progressContainer.addEventListener('mousedown', (e) => {
-                isDraggingProgress = true;
-                progressContainer.classList.add('dragging');
-                updateProgress(e);
-            });
-
-            progressContainer.addEventListener('touchstart', (e) => {
-                isDraggingProgress = true;
-                progressContainer.classList.add('dragging');
-                updateProgress(e);
-            }, { passive: true });
-
-            document.addEventListener('mousemove', (e) => {
-                if (isDraggingProgress) updateProgress(e);
-            });
-
-            document.addEventListener('touchmove', (e) => {
-                if (isDraggingProgress) updateProgress(e);
-            }, { passive: true });
-
-            document.addEventListener('mouseup', () => {
-                if (isDraggingProgress) {
-                    isDraggingProgress = false;
-                    progressContainer.classList.remove('dragging');
-                }
-            });
-
-            document.addEventListener('touchend', () => {
-                if (isDraggingProgress) {
-                    isDraggingProgress = false;
-                    progressContainer.classList.remove('dragging');
-                }
-            });
-        }
-
-        // Mobile: touch hold for 2x speed
-        container.addEventListener('touchstart', (e) => {
-            if (e.target.closest('.side-actions') || e.target.closest('.video-info') || e.target.closest('.video-progress-container') || e.target.closest('.mute-btn')) return;
-            
-            const touch = e.touches[0];
-            const rect = container.getBoundingClientRect();
-            const touchX = touch.clientX - rect.left;
-            
-            if (touchX > rect.width * 0.6) {
-                holdTimer = setTimeout(() => {
-                    if (!video.paused) {
-                        isSpeedUp = true;
-                        video.playbackRate = 2;
-                        if (speedIndicator) speedIndicator.classList.add('show');
-                    }
-                }, 200);
+            if(newAvatarUrl) {
+                payload.avatar = newAvatarUrl;
             }
-        }, { passive: true });
-        
-        container.addEventListener('touchend', () => {
-            if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-            if (isSpeedUp) {
-                isSpeedUp = false;
-                video.playbackRate = 1;
-                if (speedIndicator) speedIndicator.classList.remove('show');
-                return;
-            }
-        });
-        
-        container.addEventListener('touchcancel', () => {
-            if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-            if (isSpeedUp) {
-                isSpeedUp = false;
-                video.playbackRate = 1;
-                if (speedIndicator) speedIndicator.classList.remove('show');
-            }
-        });
-        
-        // Desktop: mouse hold for 2x speed
-        container.addEventListener('mousedown', (e) => {
-            if (e.target.closest('.side-actions') || e.target.closest('.video-info') || e.target.closest('.video-progress-container') || e.target.closest('.mute-btn')) return;
-            
-            const rect = container.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            
-            if (clickX > rect.width * 0.6) {
-                holdTimer = setTimeout(() => {
-                    if (!video.paused) {
-                        isSpeedUp = true;
-                        video.playbackRate = 2;
-                        if (speedIndicator) speedIndicator.classList.add('show');
-                    }
-                }, 200);
-            }
-        });
-        
-        document.addEventListener('mouseup', () => {
-            if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-            if (isSpeedUp) {
-                isSpeedUp = false;
-                video.playbackRate = 1;
-                if (speedIndicator) speedIndicator.classList.remove('show');
-            }
-        });
-        
-        // Tap to pause/play
-        container.addEventListener('click', (e) => {
-            if (e.target.closest('.side-actions') || e.target.closest('.video-info') || e.target.closest('.video-progress-container') || e.target.closest('.mute-btn')) return;
-            if (isSpeedUp) return;
-            if (!pauseIndicator) return;
-            
-            if (video.paused) {
-                video.play();
-                pauseIndicator.classList.remove('show');
-                pauseIndicator.classList.add('hide-anim');
-                setTimeout(() => {
-                    pauseIndicator.classList.remove('hide-anim');
-                    pauseIndicator.querySelector('i').className = 'fa-solid fa-pause';
-                }, 150);
-            } else {
-                video.pause();
-                pauseIndicator.querySelector('i').className = 'fa-solid fa-pause';
-                pauseIndicator.classList.remove('hide-anim');
-                pauseIndicator.classList.add('show');
-            }
-        });
-    }
 
-    // ==========================================
-    // SHUFFLE ARRAY
-    // ==========================================
-    function shuffleArray(array) {
-        const shuffled = [...array];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        return shuffled;
-    }
-
-    // ==========================================
-    // FORMAT DATE
-    // ==========================================
-    function formatDate(date) {
-        const now = new Date();
-        const diff = now - date;
-        const seconds = Math.floor(diff / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
-        
-        if (days > 7) return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-        if (days > 0) return `il y a ${days}j`;
-        if (hours > 0) return `il y a ${hours}h`;
-        if (minutes > 0) return `il y a ${minutes}min`;
-        return 'a l\'instant';
-    }
-
-    // ==========================================
-    // FEED LOADER
-    // ==========================================
-    async function loadFeed() {
-        try {
-            const res = await fetch('https://debateroom-u1gz.onrender.com/api/feed/foryou?email=' + user.email);
-            let rooms = await res.json();
-            
-            const unseenRooms = rooms.filter(r => !viewedRooms.includes(r.slug));
-            const seenRooms = rooms.filter(r => viewedRooms.includes(r.slug));
-            rooms = [...shuffleArray(unseenRooms), ...shuffleArray(seenRooms)];
-            
-            const container = document.getElementById('feedScroll');
-            container.innerHTML = '';
-
-            rooms.forEach(room => {
-                const validCount = room.votes?.valid?.length || 0;
-                const intingCount = room.votes?.inting?.length || 0;
-                const commentCount = room.messages?.length || 0;
-                
-                const createdDate = room.createdAt ? new Date(room.createdAt) : new Date(room.updatedAt);
-                const formattedDate = formatDate(createdDate);
-                
-                const creatorAvatar = room.creatorAvatar || room.ownerAvatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
-                const creatorName = room.creatorPseudo || room.creatorName || room.ownerPseudo || room.ownerName || 'Joueur';
-                const creatorEmail = room.ownerEmail || '';
-                const videoDescription = room.videoDescription || '';
-                
-                console.log("[v0] Room creator info:", { 
-                    slug: room.slug, 
-                    creatorAvatar, 
-                    creatorName, 
-                    ownerEmail: room.ownerEmail,
-                    rawRoom: room 
+            try {
+                const res = await fetch('https://debateroom-u1gz.onrender.com/api/auth/update', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
                 });
-                
-                const slide = document.createElement('div');
-                slide.className = 'video-slide';
-                slide.dataset.slug = room.slug;
-                slide.id = `room-${room.slug}`;
-                
-                slide.innerHTML = `
-                    <div class="video-container">${getPlayerHTML(room)}</div>
-                    <div class="video-info">
-                        <span class="video-game-tag"><i class="fa-solid fa-gamepad"></i> ${room.game}</span>
-                        <h2 class="video-title">${room.videoTitle || 'Debat'}</h2>
-                        ${videoDescription ? `<p class="video-description">${videoDescription}</p>` : ''}
-                        <div class="video-creator">
-                            <div class="video-creator-avatar" style="background-image:url('${creatorAvatar}')" onclick="goToProfile('${creatorEmail}')"></div>
-                            <div class="video-creator-info">
-                                <span class="video-creator-name" onclick="goToProfile('${creatorEmail}')">@${creatorName}</span>
-                                <span class="video-creator-date">${formattedDate}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="side-actions">
-                        <div class="action-btn vote-valid" onclick="doVote('${room.slug}','valid')">
-                            <div class="action-circle" id="valid-${room.slug}"><i class="fa-solid fa-check"></i></div>
-                            <span class="action-count blind" id="valid-count-${room.slug}">${validCount}</span>
-                        </div>
-                        <div class="action-btn vote-inting" onclick="doVote('${room.slug}','inting')">
-                            <div class="action-circle" id="inting-${room.slug}"><i class="fa-solid fa-xmark"></i></div>
-                            <span class="action-count blind" id="inting-count-${room.slug}">${intingCount}</span>
-                        </div>
-                        <div class="action-btn" onclick="openMobileChat('${room.slug}')">
-                            <div class="action-circle"><i class="fa-solid fa-comment-dots"></i></div>
-                            <span class="action-count" id="comment-count-${room.slug}">${commentCount}</span>
-                        </div>
-                        <div class="action-btn" onclick="shareRoom('${room.slug}')">
-                            <div class="action-circle"><i class="fa-solid fa-share"></i></div>
-                            <span class="action-count">Partager</span>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(slide);
-                
-                setupTapToPause(slide);
-                
-                const video = slide.querySelector('video');
-                if (video) {
-                    video.addEventListener('timeupdate', () => {
-                        const progressBar = slide.querySelector('.video-progress-bar');
-                        const progressThumb = slide.querySelector('.video-progress-thumb'); // Get thumb
-                        if (progressBar && !slide.querySelector('.video-progress-container').classList.contains('dragging')) {
-                            const percent = (video.currentTime / video.duration) * 100;
-                            progressBar.style.width = percent + '%';
-                            progressThumb.style.left = percent + '%'; // Update thumb position
-                        }
-                    });
-                }
-            });
+                const data = await res.json();
 
-            initObserver();
-            
-            if (startRoom) {
-                setTimeout(() => {
-                    document.getElementById(`room-${startRoom}`)?.scrollIntoView();
-                }, 500);
-            }
-        } catch (e) {
-            console.error("Error loading feed:", e);
-        }
-    }
+                if(res.ok) {
+                    user.name = data.user.name;
+                    user.given_name = data.user.pseudo;
+                    user.pseudo = data.user.pseudo;
+                    user.picture = data.user.avatar;
+                    user.avatar = data.user.avatar;
+                    user.bio = data.user.bio;
+                    user.games = data.user.games;
+                    user.details = data.user.details;
+                    localStorage.setItem('user_profile', JSON.stringify(user));
 
-    window.goToProfile = (email) => {
-        if (email) window.location.href = `userprofile.html?email=${encodeURIComponent(email)}`;
-    };
-
-    // ==========================================
-    // INTERSECTION OBSERVER
-    // ==========================================
-    function initObserver() {
-        const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const roomId = entry.target.dataset.slug;
-                    currentRoomId = roomId;
-                    socket.emit('join_room', { roomId, userEmail: user.email });
-                    
-                    if (!viewedRooms.includes(roomId)) {
-                        viewedRooms.push(roomId);
-                        if (viewedRooms.length > 100) viewedRooms = viewedRooms.slice(-100);
-                        localStorage.setItem('viewedRooms', JSON.stringify(viewedRooms));
-                    }
-                    
-                    const video = entry.target.querySelector('video');
-                    if (video && !video.paused) video.play();
-                    
-                    updateDeskChat(roomId);
+                    const t = document.getElementById('toast');
+                    t.classList.add('show');
+                    setTimeout(() => t.classList.remove('show'), 3000);
                 } else {
-                    const video = entry.target.querySelector('video');
-                    const pauseIndicator = entry.target.querySelector('.pause-indicator');
-                    const progressBar = entry.target.querySelector('.video-progress-bar');
-                    const progressThumb = entry.target.querySelector('.video-progress-thumb'); // Get thumb
-                    
-                    if (video) { 
-                        video.pause(); 
-                        video.currentTime = 0;
-                        // Reset mute when leaving viewport only if it's not the global muted state
-                        // If globalMuted is true, it should remain muted.
-                        // If globalMuted is false, it should be unmuted.
-                        video.muted = globalMuted;
-                    }
-                    if (pauseIndicator) pauseIndicator.classList.remove('show', 'hide-anim');
-                    if (progressBar) progressBar.style.width = '0%';
-                    if (progressThumb) progressThumb.style.left = '0%'; // Reset thumb position
+                    alert("Erreur: " + data.error);
                 }
-            });
-        }, { threshold: 0.5 });
-
-        document.querySelectorAll('.video-slide').forEach(slide => observer.observe(slide));
-    }
-
-    // ==========================================
-    // SOCKET: INIT ROOM
-    // ==========================================
-    socket.on('init_room', (data) => {
-        if (data.roomId === currentRoomId) {
-            currentChatMessages = data.messages || [];
-            
-            const deskList = document.getElementById('desktopChatMessages');
-            if (deskList) {
-                deskList.innerHTML = '<div class="msg-system">Selectionnez un debat</div>';
-                renderMessagesWithReplies(deskList, currentChatMessages, data.ownerEmail === user.email);
-                deskList.scrollTop = deskList.scrollHeight;
-            }
-
-            const validCounter = document.getElementById(`valid-count-${data.roomId}`);
-            const intingCounter = document.getElementById(`inting-count-${data.roomId}`);
-            const validBtn = document.getElementById(`valid-${data.roomId}`)?.parentElement;
-            const intingBtn = document.getElementById(`inting-${data.roomId}`)?.parentElement;
-
-            if (data.myVote) {
-                validCounter.classList.remove('blind');
-                intingCounter.classList.remove('blind');
-                validBtn.classList.add('disabled');
-                intingBtn.classList.add('disabled');
-                
-                if (data.myVote === 'valid') {
-                    validBtn.classList.add('selected');
-                    document.getElementById(`valid-${data.roomId}`).classList.add('active');
-                } else {
-                    intingBtn.classList.add('selected');
-                    document.getElementById(`inting-${data.roomId}`).classList.add('active');
-                }
-            } else {
-                validCounter.classList.add('blind');
-                intingCounter.classList.add('blind');
-                validBtn.classList.remove('disabled', 'selected');
-                intingBtn.classList.remove('disabled', 'selected');
-                document.getElementById(`valid-${data.roomId}`).classList.remove('active');
-                document.getElementById(`inting-${data.roomId}`).classList.remove('active');
+            } catch(e) { 
+                alert("Erreur serveur"); 
             }
             
-            if(validCounter) validCounter.innerText = data.votes.valid;
-            if(intingCounter) intingCounter.innerText = data.votes.inting;
-        }
-    });
-
-    // ==========================================
-    // VOTE ACTION
-    // ==========================================
-    window.doVote = (roomId, choice) => {
-        const validBtn = document.getElementById(`valid-${roomId}`).parentElement;
-        const intingBtn = document.getElementById(`inting-${roomId}`).parentElement;
-        
-        if (validBtn.classList.contains('disabled')) return;
-
-        document.getElementById(`valid-count-${roomId}`).classList.remove('blind');
-        document.getElementById(`inting-count-${roomId}`).classList.remove('blind');
-        
-        validBtn.classList.add('disabled');
-        intingBtn.classList.add('disabled');
-        
-        if (choice === 'valid') {
-            validBtn.classList.add('selected');
-            document.getElementById(`valid-${roomId}`).classList.add('active');
-        } else {
-            intingBtn.classList.add('selected');
-            document.getElementById(`inting-${roomId}`).classList.add('active');
+            btn.innerText = "SAUVEGARDER LES MODIFICATIONS"; btn.disabled = false;
         }
 
-        socket.emit('send_vote', { roomId, choice, userId: user.email });
-    };
-
-    // ==========================================
-    // ELO UPDATE ANIMATION
-    // ==========================================
-    socket.on('update_user_elo', (data) => {
-        const badge = document.getElementById('headerElo');
-        const popup = document.getElementById('eloPopup');
-        const mobileBadge = document.getElementById('mobileEloValue');
-        const mobilePopup = document.getElementById('mobileEloPopup');
-        const mobileContainer = document.getElementById('mobileEloBadge');
-        
-        if (badge && popup) {
-            const diff = data.elo - user.elo;
-            
-            popup.innerText = diff > 0 ? `+${diff}` : diff;
-            popup.className = `elo-popup show ${diff > 0 ? 'elo-gain' : 'elo-loss'}`;
-            
-            badge.style.transform = "scale(1.3)";
-            badge.innerText = data.elo;
-            badge.style.background = diff > 0 ? "#00d26a" : "#ff4757";
-
-            setTimeout(() => {
-                badge.style.transform = "scale(1)";
-                badge.style.background = "var(--accent)";
-                popup.classList.remove('show');
-            }, 1500);
-        }
-        
-        if (mobileBadge && mobilePopup && mobileContainer) {
-            const diff = data.elo - user.elo;
-            
-            mobilePopup.innerText = diff > 0 ? `+${diff}` : diff;
-            mobilePopup.className = `mobile-elo-popup show ${diff > 0 ? 'elo-gain' : 'elo-loss'}`;
-            
-            mobileBadge.innerText = data.elo;
-            mobileContainer.style.background = diff > 0 ? "#00d26a" : "#ff4757";
-            mobileContainer.style.transform = "scale(1.2)";
-
-            setTimeout(() => {
-                mobileContainer.style.background = "var(--accent)";
-                mobileContainer.style.transform = "scale(1)";
-                mobilePopup.classList.remove('show');
-            }, 1500);
-        }
-        
-        user.elo = data.elo;
-        localStorage.setItem('user_profile', JSON.stringify(user));
-    });
-
-    socket.on('update_votes', (data) => {
-        const validCounter = document.getElementById(`valid-count-${data.roomId}`);
-        const intingCounter = document.getElementById(`inting-count-${data.roomId}`);
-        if (validCounter) validCounter.innerText = data.valid;
-        if (intingCounter) intingCounter.innerText = data.inting;
-    });
-
-    // ==========================================
-    // CHAT FUNCTIONS
-    // ==========================================
-    function updateDeskChat(roomId) {
-        const list = document.getElementById('desktopChatMessages');
-        if (list) {
-            list.innerHTML = '<div class="msg-system">Chargement...</div>';
-            list.dataset.room = roomId;
-        }
-    }
-    
-    function renderMessagesWithReplies(container, messages, isOwner) {
-        // Build a map of replies grouped by parent message ID
-        const repliesMap = {};
-        const rootMessages = [];
-        
-        messages.forEach(msg => {
-            if (msg.replyTo) {
-                // This is a reply - add to repliesMap
-                if (!repliesMap[msg.replyTo]) {
-                    repliesMap[msg.replyTo] = [];
-                }
-                repliesMap[msg.replyTo].push(msg);
-            } else {
-                // This is a root message
-                rootMessages.push(msg);
-            }
-        });
-        
-        // Render only root messages, with their replies attached
-        rootMessages.forEach(msg => {
-            msg.replies = repliesMap[msg._id] || [];
-            addMessageToUI(container, msg, isOwner);
-        });
-        
-        // Also render orphan replies (replies to deleted messages) as root messages
-        messages.forEach(msg => {
-            if (msg.replyTo) {
-                const parentExists = messages.some(m => m._id === msg.replyTo);
-                if (!parentExists) {
-                    addMessageToUI(container, msg, isOwner);
-                }
-            }
-        });
-    }
-
-    function addMessageToUI(container, msg, isOwner) {
-        if (!container) return;
-        
-        const avatarUrl = msg.avatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
-        
-        let badgesHTML = '';
-        if (msg.games && msg.details) {
-            const gameKeys = Object.keys(msg.details);
-            if (gameKeys.length > 0) {
-                const firstGameKey = gameKeys[0];
-                const gameDetails = msg.details[firstGameKey];
-                if (gameDetails && gameDetails.rank) {
-                    let popupRows = '';
-                    for (const gKey in msg.details) {
-                        if (msg.details[gKey] && msg.details[gKey].rank) {
-                            popupRows += `<div class="badge-row"><span>${gKey.toUpperCase()}</span><span class="rank">${msg.details[gKey].rank}</span></div>`;
-                        }
-                    }
-                    badgesHTML = `<div class="msg-badges"><span class="badge-main">${firstGameKey.toUpperCase()} ${gameDetails.rank}</span><div class="badge-popup">${popupRows}</div></div>`;
-                }
-            }
-        }
-
-        const deleteBtn = isOwner ? `<span class="msg-delete" onclick="deleteMsg('${msg._id}','${msg.roomId}')"><i class="fa-solid fa-trash"></i></span>` : '';
-        
-        const div = document.createElement('div');
-        div.className = 'message';
-        div.id = `msg-${msg._id}`;
-        
-        const likeCount = msg.likes?.length || 0;
-        const isLiked = msg.likes?.includes(user.email);
-        const likedClass = isLiked ? 'liked' : '';
-        const heartIcon = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-        
-        // Reply preview if this is a reply
-        let replyPreviewHTML = '';
-        if (msg.replyTo && msg.replyToUsername) {
-            replyPreviewHTML = `
-                <div class="msg-reply-preview" onclick="scrollToMessage('${msg.replyTo}')">
-                    <i class="fa-solid fa-reply"></i>
-                    <span class="reply-to-user">@${msg.replyToUsername}</span>
-                    <span class="reply-to-text">${msg.replyToText || ''}</span>
-                </div>
-            `;
-        }
-        
-        let repliesHTML = '';
-        if (msg.replies && msg.replies.length > 0) {
-            const repliesItems = msg.replies.map(reply => {
-                const replyAvatarUrl = reply.avatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
-                const replyLikeCount = reply.likes?.length || 0;
-                const replyIsLiked = reply.likes?.includes(user.email);
-                const replyLikedClass = replyIsLiked ? 'liked' : '';
-                const replyHeartIcon = replyIsLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-                
-                return `
-                    <div class="msg-reply-item" id="msg-${reply._id}">
-                        <div class="msg-header">
-                            <div class="msg-avatar" style="background-image:url('${replyAvatarUrl}')"></div>
-                            <span class="msg-author">${reply.username}</span>
-                        </div>
-                        <div class="msg-text">${reply.text}</div>
-                        <div class="msg-actions" style="padding-left:30px;">
-                            <button class="msg-action-btn ${replyLikedClass}" id="like-btn-${reply._id}" onclick="toggleLikeMessage('${reply._id}', '${reply.roomId}')">
-                                <i class="${replyHeartIcon}"></i>
-                                <span class="msg-like-count" id="like-count-${reply._id}">${replyLikeCount > 0 ? replyLikeCount : ''}</span>
-                            </button>
-                            <button class="msg-action-btn" onclick="startReply('${msg._id}', '${reply.username}', \`${(reply.text || '').replace(/`/g, "'").replace(/\\/g, "\\\\").substring(0, 50)}\`)">
-                                <i class="fa-regular fa-comment"></i>
-                                <span>Repondre</span>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            repliesHTML = `
-                <div class="msg-replies-toggle" onclick="toggleReplies(this)">
-                    <i class="fa-solid fa-chevron-down"></i>
-                    <span>Voir ${msg.replies.length} reponse${msg.replies.length > 1 ? 's' : ''}</span>
-                </div>
-                <div class="msg-replies-container">
-                    ${repliesItems}
-                </div>
-            `;
-        }
-
-        div.innerHTML = `
-            ${replyPreviewHTML}
-            <div class="msg-header">
-                <div class="msg-avatar" style="background-image:url('${avatarUrl}')"></div>
-                <span class="msg-author">${msg.username}</span>
-                ${badgesHTML}
-                ${deleteBtn}
-            </div>
-            <div class="msg-text">${msg.text}</div>
-            <div class="msg-actions">
-                <button class="msg-action-btn ${likedClass}" id="like-btn-${msg._id}" onclick="toggleLikeMessage('${msg._id}', '${msg.roomId}')">
-                    <i class="${heartIcon}"></i>
-                    <span class="msg-like-count" id="like-count-${msg._id}">${likeCount > 0 ? likeCount : ''}</span>
-                </button>
-                <button class="msg-action-btn" onclick="startReply('${msg._id}', '${msg.username}', \`${(msg.text || '').replace(/`/g, "'").replace(/\\/g, "\\\\").substring(0, 50)}\`)">
-                    <i class="fa-regular fa-comment"></i>
-                    <span>Repondre</span>
-                </button>
-            </div>
-            ${repliesHTML}
-        `;
-        container.appendChild(div);
-    }
-
-    // Updated socket.on('receive_message') to handle replies correctly in both desktop and mobile chats
-    socket.on('receive_message', (msg) => {
-        if (msg.roomId === currentRoomId) {
-            const deskList = document.getElementById('desktopChatMessages');
-            const mobileList = document.getElementById('mobileChatMessages');
-            
-            if (msg.replyTo) {
-                // Find parent message in both desktop and mobile
-                [deskList, mobileList].forEach(list => {
-                    if (!list) return;
-                    const parentMsg = list.querySelector(`#msg-${msg.replyTo}`);
-                    if (parentMsg) {
-                        let repliesToggle = parentMsg.querySelector('.msg-replies-toggle');
-                        let repliesContainer = parentMsg.querySelector('.msg-replies-container');
-                        
-                        if (!repliesContainer) {
-                            const repliesHTML = `
-                                <div class="msg-replies-toggle expanded" onclick="toggleReplies(this)">
-                                    <i class="fa-solid fa-chevron-down"></i>
-                                    <span>Voir 1 reponse</span>
-                                </div>
-                                <div class="msg-replies-container expanded"></div>
-                            `;
-                            parentMsg.insertAdjacentHTML('beforeend', repliesHTML);
-                            repliesToggle = parentMsg.querySelector('.msg-replies-toggle');
-                            repliesContainer = parentMsg.querySelector('.msg-replies-container');
-                        }
-                        
-                        const replyAvatarUrl = msg.avatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
-                        const replyHTML = `
-                            <div class="msg-reply-item" id="msg-${msg._id}">
-                                <div class="msg-header">
-                                    <div class="msg-avatar" style="background-image:url('${replyAvatarUrl}')"></div>
-                                    <span class="msg-author">${msg.username}</span>
-                                </div>
-                                <div class="msg-text">${msg.text}</div>
-                                <div class="msg-actions" style="padding-left:30px;">
-                                    <button class="msg-action-btn" id="like-btn-${msg._id}" onclick="toggleLikeMessage('${msg._id}', '${msg.roomId}')">
-                                        <i class="fa-regular fa-heart"></i>
-                                        <span class="msg-like-count" id="like-count-${msg._id}"></span>
-                                    </button>
-                                    <button class="msg-action-btn" onclick="startReply('${msg.replyTo}', '${msg.username}', '${(msg.text || '').replace(/'/g, "\\'").substring(0, 50)}')">
-                                        <i class="fa-regular fa-comment"></i>
-                                        <span>Repondre</span>
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                        repliesContainer.insertAdjacentHTML('beforeend', replyHTML);
-                        
-                        const countSpan = repliesToggle.querySelector('span');
-                        const currentCount = repliesContainer.querySelectorAll('.msg-reply-item').length;
-                        countSpan.innerText = `Voir ${currentCount} reponse${currentCount > 1 ? 's' : ''}`;
-                        
-                        repliesContainer.classList.add('expanded');
-                        repliesToggle.classList.add('expanded');
-                    }
-                });
-            } else {
-                // Regular message - add normally to both lists
-                if (deskList && deskList.dataset.room === msg.roomId) {
-                    addMessageToUI(deskList, msg, false);
-                    deskList.scrollTop = deskList.scrollHeight;
-                }
-                
-                if (mobileList && document.getElementById('mobileChat').classList.contains('open') && currentRoomId === msg.roomId) {
-                    addMessageToUI(mobileList, msg, false);
-                    mobileList.scrollTop = mobileList.scrollHeight;
-                }
-            }
-            
-            currentChatMessages.push(msg);
-            
-            const commentCounter = document.getElementById(`comment-count-${msg.roomId}`);
-            if (commentCounter) {
-                const currentCount = parseInt(commentCounter.innerText) || 0;
-                commentCounter.innerText = currentCount + 1;
-            }
-        }
-    });
-    
-    socket.on('message_liked', (data) => {
-        console.log("[v0] Message liked event:", data);
-        const btn = document.getElementById(`like-btn-${data.messageId}`);
-        const countEl = document.getElementById(`like-count-${data.messageId}`);
-        
-        if (btn && countEl) {
-            const isLiked = data.likes.includes(user.email);
-            btn.className = `msg-action-btn ${isLiked ? 'liked' : ''}`;
-            btn.querySelector('i').className = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-            countEl.innerText = data.likes.length > 0 ? data.likes.length : '';
-        }
-    });
-
-    // ==========================================
-    // UI HELPERS
-    // ==========================================
-    window.toggleUserMenu = () => {
-        document.getElementById('userDropdown').classList.toggle('open');
-    };
-
-    window.toggleDesktopChat = () => {
-        document.getElementById('appLayout').classList.toggle('chat-collapsed');
-        document.getElementById('chatToggleBtn').classList.toggle('active');
-    };
-
-    window.openCreateModal = () => {
-        document.getElementById('createModal').classList.add('open');
-    };
-
-    window.closeCreateModal = () => {
-        document.getElementById('createModal').classList.remove('open');
-        document.getElementById('newLinkInput').value = '';
-        document.getElementById('videoFileInput').value = '';
-        document.getElementById('uploadFileName').innerText = 'Choisir une video';
-        document.getElementById('publishBtn').innerText = 'PUBLIER';
-        document.getElementById('publishBtn').disabled = false;
-        document.getElementById('newVideoTitle').value = '';
-        document.getElementById('newVideoDescription').value = '';
-    };
-
-    window.openMobileChat = (roomId) => {
-        currentRoomId = roomId;
-        document.getElementById('mobileChat').classList.add('open');
-        document.getElementById('mobileChatOverlay').classList.add('open');
-        
-        const mobileList = document.getElementById('mobileChatMessages');
-        mobileList.innerHTML = '';
-        
-        if (currentChatMessages && currentChatMessages.length > 0) {
-            currentChatMessages.forEach(msg => addMessageToUI(mobileList, msg, false));
-            setTimeout(() => { mobileList.scrollTop = mobileList.scrollHeight; }, 100);
-        } else {
-            mobileList.innerHTML = '<div class="msg-system">Aucun message</div>';
-        }
-        
-        socket.emit('join_room', { roomId, userEmail: user.email });
-    };
-
-    window.closeMobileChat = () => {
-        document.getElementById('mobileChat').classList.remove('open');
-        document.getElementById('mobileChatOverlay').classList.remove('open');
-        // Clear the current room ID when closing mobile chat to avoid sending messages to the wrong room
-        // This might need adjustment depending on desired behavior (e.g., if a user navigates away)
-        // For now, let's not reset it, assuming the user might want to reopen it to the same chat.
-        // currentRoomId = null; 
-    };
-
-    // Mobile chat swipe to close
-    (function setupMobileChatSwipe() {
-        const mobileChat = document.getElementById('mobileChat');
-        const chatMessages = document.getElementById('mobileChatMessages');
-        let startY = 0;
-        let currentY = 0;
-        let isDragging = false;
-
-        mobileChat.addEventListener('touchstart', (e) => {
-            // Check if the touch is on the drag handle or header, or if the chat is scrolled to the top
-            const isHandleOrHeader = e.target.closest('.mobile-chat-drag-handle') || e.target.closest('.mobile-chat-header');
-            const isScrolledToTop = chatMessages.scrollTop <= 0;
-
-            if (isHandleOrHeader || (isScrolledToTop && e.cancelable)) { // Only allow drag if it's the handle/header or if scroll is at top and touch is cancelable
-                startY = e.touches[0].clientY;
-                isDragging = true;
-                // Prevent default scroll if we are starting a drag action
-                if (isHandleOrHeader) e.preventDefault(); 
-            }
-        }, { passive: false }); // Use passive: false to allow preventDefault
-
-        mobileChat.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            currentY = e.touches[0].clientY;
-            const diff = currentY - startY;
-            // Only apply transform if scrolling down and at the top, and if the touch is not on an input field
-            if (diff > 0 && chatMessages.scrollTop <= 0 && !e.target.closest('input, textarea')) { 
-                mobileChat.style.transform = `translateY(${diff}px)`;
-                e.preventDefault(); // Prevent background scrolling
-            }
-        }, { passive: false });
-
-        mobileChat.addEventListener('touchend', () => {
-            if (!isDragging) return;
-            isDragging = false;
-            const diff = currentY - startY;
-            if (diff > 100) { // Threshold for closing
-                closeMobileChat();
-            }
-            mobileChat.style.transform = ''; // Reset transform
-        });
-    })();
-
-    window.shareRoom = (slug) => {
-        navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?room=${slug}`)
-            .then(() => alert("Lien copie !"));
-    };
-
-    window.shareCurrentRoom = () => {
-        if (currentRoomId) shareRoom(currentRoomId);
-    };
-
-    window.logout = () => {
-        localStorage.clear();
-        window.location.href = 'login.html';
-    };
-
-    // ==========================================
-    // UPLOAD INDICATOR
-    // ==========================================
-    function showUploadIndicator() {
-        const indicator = document.getElementById('uploadIndicator');
-        indicator.classList.remove('success');
-        indicator.classList.add('show', 'uploading');
-    }
-    
-    function showUploadSuccess() {
-        const indicator = document.getElementById('uploadIndicator');
-        indicator.classList.remove('uploading');
-        indicator.classList.add('success');
-        setTimeout(() => { indicator.classList.remove('show', 'success'); }, 2000);
-    }
-    
-    function hideUploadIndicator() {
-        const indicator = document.getElementById('uploadIndicator');
-        indicator.classList.remove('show', 'success', 'uploading');
-    }
-
-    // ==========================================
-    // UPLOAD SYSTEM
-    // ==========================================
-    let uploadMode = 'link';
-    let isCreatorUpload = false;
-
-    window.switchUploadTab = (mode) => {
-        uploadMode = mode;
-        document.getElementById('linkInputGroup').style.display = mode === 'link' ? 'block' : 'none';
-        document.getElementById('fileInputGroup').style.display = mode === 'file' ? 'block' : 'none';
-        document.getElementById('tabLinkBtn').style.background = mode === 'link' ? 'var(--accent)' : 'transparent';
-        document.getElementById('tabLinkBtn').style.color = mode === 'link' ? '#000' : 'var(--text-secondary)';
-        document.getElementById('tabFileBtn').style.background = mode === 'file' ? 'var(--accent)' : 'transparent';
-        document.getElementById('tabFileBtn').style.color = mode === 'file' ? '#000' : 'var(--text-secondary)';
-    };
-
-    window.handleFileSelect = () => {
-        const file = document.getElementById('videoFileInput').files[0];
-        if (file) document.getElementById('uploadFileName').innerText = file.name;
-    };
-
-    socket.on('room_created', (slug) => {
-        console.log("[v0] Room created via socket:", slug);
-        showUploadSuccess();
-        
-        setTimeout(() => {
-            if (isCreatorUpload && pendingRoomData) {
-                const container = document.getElementById('feedScroll');
-                const createdDate = new Date();
-                const formattedDate = formatDate(createdDate);
-                const creatorAvatar = user.avatar || user.picture || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
-                const creatorName = user.pseudo || user.given_name || user.name || 'Joueur';
-                
-                console.log("[v0] Creating new slide with creator:", { creatorAvatar, creatorName, userEmail: user.email });
-                
-                const newSlide = document.createElement('div');
-                newSlide.className = 'video-slide';
-                newSlide.dataset.slug = slug;
-                newSlide.id = `room-${slug}`;
-                
-                const mutedAttr = globalMuted ? 'muted' : '';
-                const muteIcon = globalMuted ? 'fa-volume-xmark' : 'fa-volume-high';
-                const muteClass = globalMuted ? 'muted' : '';
-                
-                newSlide.innerHTML = `
-                    <div class="video-container">
-                        <video src="${pendingRoomData.videoUrl}" loop playsinline ${mutedAttr}></video>
-                        <div class="mute-btn ${muteClass}" onclick="toggleMute(event, this)"><i class="fa-solid ${muteIcon}"></i></div>
-                        <div class="pause-indicator"><i class="fa-solid fa-pause"></i></div>
-                        <div class="speed-indicator"><i class="fa-solid fa-forward-fast"></i> 2x</div>
-                        <div class="video-progress-container">
-                            <div class="video-progress-bar"><div class="video-progress-thumb"></div></div>
-                        </div>
-                    </div>
-                    <div class="video-info">
-                        <span class="video-game-tag"><i class="fa-solid fa-gamepad"></i> ${pendingRoomData.game}</span>
-                        <h2 class="video-title">${pendingRoomData.title}</h2>
-                        ${pendingRoomData.description ? `<p class="video-description">${pendingRoomData.description}</p>` : ''}
-                        <div class="video-creator">
-                            <div class="video-creator-avatar" style="background-image:url('${creatorAvatar}')" onclick="goToProfile('${user.email}')"></div>
-                            <div class="video-creator-info">
-                                <span class="video-creator-name" onclick="goToProfile('${user.email}')">@${creatorName}</span>
-                                <span class="video-creator-date">${formattedDate}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="side-actions">
-                        <div class="action-btn vote-valid" onclick="doVote('${slug}','valid')">
-                            <div class="action-circle" id="valid-${slug}"><i class="fa-solid fa-check"></i></div>
-                            <span class="action-count blind" id="valid-count-${slug}">0</span>
-                        </div>
-                        <div class="action-btn vote-inting" onclick="doVote('${slug}','inting')">
-                            <div class="action-circle" id="inting-${slug}"><i class="fa-solid fa-xmark"></i></div>
-                            <span class="action-count blind" id="inting-count-${slug}">0</span>
-                        </div>
-                        <div class="action-btn" onclick="openMobileChat('${slug}')">
-                            <div class="action-circle"><i class="fa-solid fa-comment-dots"></i></div>
-                            <span class="action-count" id="comment-count-${slug}">0</span>
-                        </div>
-                        <div class="action-btn" onclick="shareRoom('${slug}')">
-                            <div class="action-circle"><i class="fa-solid fa-share"></i></div>
-                            <span class="action-count">Partager</span>
-                        </div>
-                    </div>
-                `;
-                
-                container.insertBefore(newSlide, container.firstChild);
-                setupTapToPause(newSlide);
-                
-                const video = newSlide.querySelector('video');
-                if (video) {
-                    video.play().catch(() => {});
-                    video.addEventListener('timeupdate', () => {
-                        const progressBar = newSlide.querySelector('.video-progress-bar');
-                        if (progressBar && !newSlide.querySelector('.video-progress-container').classList.contains('dragging')) {
-                            const percent = (video.currentTime / video.duration) * 100;
-                            progressBar.style.width = percent + '%';
-                        }
-                    });
-                }
-                
-                newSlide.scrollIntoView({ behavior: 'smooth' });
-                isCreatorUpload = false;
-                pendingRoomData = null;
-            }
-        }, 500);
-    });
-
-    let pendingRoomData = null;
-
-    window.createRoom = async () => {
-        const game = document.getElementById('newGameSelect').value;
-        const link = document.getElementById('newLinkInput').value;
-        const fileInput = document.getElementById('videoFileInput');
-        const title = document.getElementById('newVideoTitle').value || 'Nouveau Debat';
-        const description = document.getElementById('newVideoDescription').value || '';
-        
-        if (!title.trim()) {
-            alert("Veuillez ajouter un titre a votre debat");
-            return;
-        }
-        
-        const hasFile = uploadMode === 'file' && fileInput.files && fileInput.files.length > 0;
-        const hasLink = uploadMode === 'link' && link.trim();
-        
-        if (!hasFile && !hasLink) {
-            alert("Ajoutez une video ou un lien !");
-            return;
-        }
-
-        const selectedFile = hasFile ? fileInput.files[0] : null;
-        
-        closeCreateModal();
-        showUploadIndicator();
-        isCreatorUpload = true;
-        
-        try {
-            let videoUrl = '';
-            let platform = 'file'; // Default to file or unknown if not specified
-
-            if (selectedFile) {
-                const formData = new FormData();
-                formData.append('videoFile', selectedFile);
-
-                const uploadRes = await fetch('https://debateroom-u1gz.onrender.com/api/video/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!uploadRes.ok) throw new Error('Upload failed');
-                const uploadData = await uploadRes.json();
-                videoUrl = uploadData.src;
-                platform = 'file'; // Explicitly set to file
-            } else if (hasLink) {
-                if (link.includes('youtube.com') || link.includes('youtu.be')) {
-                    const ytId = link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/)?.[1];
-                    videoUrl = ytId ? `https://www.youtube.com/embed/${ytId}` : link;
-                    platform = 'youtube';
-                } else if (link.includes('tiktok.com')) {
-                    const ttId = link.match(/video\/(\d+)/)?.[1];
-                    videoUrl = ttId ? `https://www.tiktok.com/embed/v2/${ttId}` : link;
-                    platform = 'tiktok';
-                } else {
-                    // If it's a link but not recognized, treat it as a direct URL (like a file path)
-                    videoUrl = link;
-                    platform = 'file'; // Or perhaps 'other' if you have such a category
-                }
-            }
-
-            pendingRoomData = { game, videoUrl, title, description, platform };
-            
-            socket.emit('create_room', {
-                game: game,
-                userEmail: user.email,
-                src: videoUrl,
-                title: title,
-                platform: platform,
-                description: description // Send description to backend as well
-            });
-            
-        } catch (e) {
-            console.error("Upload error:", e);
-            hideUploadIndicator();
-            alert("Erreur lors de la publication. Reessayez.");
-            isCreatorUpload = false;
-            pendingRoomData = null; // Clear pending data on error
-        }
-    };
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.user-menu')) {
-            document.getElementById('userDropdown')?.classList.remove('open');
-        }
-    });
-
-    // ==========================================
-    // ADDING MISSING GLOBAL FUNCTIONS FOR REPLIES AND LIKES
-    // ==========================================
-    window.startReply = (messageId, username, text) => {
-        replyingTo = { messageId, username, text };
-        
-        // Desktop
-        const deskIndicator = document.getElementById('desktopReplyIndicator');
-        if (deskIndicator) {
-            deskIndicator.classList.add('active');
-            deskIndicator.querySelector('.reply-indicator-text').innerHTML = `Repondre a <span>@${username}</span>`;
-        }
-        
-        // Mobile
-        const mobileIndicator = document.getElementById('mobileReplyIndicator');
-        if (mobileIndicator) {
-            mobileIndicator.classList.add('active');
-            mobileIndicator.querySelector('.reply-indicator-text').innerHTML = `Repondre a <span>@${username}</span>`;
-        }
-        
-        // Focus on input
-        document.getElementById('desktopChatInput')?.focus();
-        document.getElementById('mobileChatInput')?.focus();
-    };
-    
-    window.cancelReply = () => {
-        replyingTo = null;
-        document.getElementById('desktopReplyIndicator')?.classList.remove('active');
-        document.getElementById('mobileReplyIndicator')?.classList.remove('active');
-    };
-    
-    window.toggleLikeMessage = (messageId, roomId) => {
-        socket.emit('toggle_like_message', { messageId, roomId, userEmail: user.email });
-        
-        // Optimistic UI update
-        const btn = document.getElementById(`like-btn-${messageId}`);
-        const countEl = document.getElementById(`like-count-${messageId}`);
-        
-        if (btn && countEl) {
-            const isLiked = btn.classList.contains('liked');
-            let count = parseInt(countEl.innerText) || 0;
-            
-            if (isLiked) {
-                btn.classList.remove('liked');
-                btn.querySelector('i').className = 'fa-regular fa-heart';
-                count = Math.max(0, count - 1);
-            } else {
-                btn.classList.add('liked');
-                btn.querySelector('i').className = 'fa-solid fa-heart';
-                count++;
-            }
-            
-            countEl.innerText = count > 0 ? count : '';
-        }
-    };
-    
-    window.toggleReplies = (toggle) => {
-        toggle.classList.toggle('expanded');
-        const container = toggle.nextElementSibling;
-        if (container) container.classList.toggle('expanded');
-    };
-    
-    window.scrollToMessage = (messageId) => {
-        const msgEl = document.getElementById(`msg-${messageId}`);
-        if (msgEl) {
-            msgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            msgEl.style.background = 'rgba(212,175,55,0.2)';
-            setTimeout(() => { msgEl.style.background = ''; }, 1500);
-        }
-    };
-    
-    window.deleteMsg = (msgId, roomId) => {
-        if (confirm('Supprimer ce message ?')) {
-            socket.emit('delete_message', { messageId: msgId, roomId });
-            document.getElementById(`msg-${msgId}`)?.remove();
-        }
-    };
-    
-    // Socket listener for like updates
-    socket.on('message_liked', (data) => {
-        console.log("[v0] Message liked event:", data);
-        const btn = document.getElementById(`like-btn-${data.messageId}`);
-        const countEl = document.getElementById(`like-count-${data.messageId}`);
-        
-        if (btn && countEl) {
-            const isLiked = data.likes.includes(user.email);
-            btn.className = `msg-action-btn ${isLiked ? 'liked' : ''}`;
-            btn.querySelector('i').className = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-            countEl.innerText = data.likes.length > 0 ? data.likes.length : '';
-        }
-    });
-
-    // ==========================================
-    // SEND MESSAGE (updated for replies)
-    // ==========================================
-    window.sendDesktopMessage = () => {
-        const input = document.getElementById('desktopChatInput');
-        const text = input.value.trim();
-        if (!text || !currentRoomId) return;
-        
-        const msgData = {
-            roomId: currentRoomId,
-            username: user.pseudo || user.given_name || user.name,
-            userEmail: user.email,
-            avatar: user.avatar || user.picture,
-            text,
-            games: user.games || [],
-            details: user.details || {}
-        };
-        
-        // Add reply info if replying
-        if (replyingTo) {
-            msgData.replyTo = replyingTo.messageId;
-            msgData.replyToUsername = replyingTo.username;
-            msgData.replyToText = replyingTo.text;
-        }
-        
-        socket.emit('send_message', msgData);
-        input.value = '';
-        cancelReply();
-    };
-    
-    window.sendMobileMessage = () => {
-        const input = document.getElementById('mobileChatInput');
-        const text = input.value.trim();
-        if (!text || !currentRoomId) return;
-        
-        const msgData = {
-            roomId: currentRoomId,
-            username: user.pseudo || user.given_name || user.name,
-            userEmail: user.email,
-            avatar: user.avatar || user.picture,
-            text,
-            games: user.games || [],
-            details: user.details || {}
-        };
-        
-        // Add reply info if replying
-        if (replyingTo) {
-            msgData.replyTo = replyingTo.messageId;
-            msgData.replyToUsername = replyingTo.username;
-            msgData.replyToText = replyingTo.text;
-        }
-        
-        socket.emit('send_message', msgData);
-        input.value = '';
-        cancelReply();
-    };
-
-    // INIT
-    loadFeed();
-    // Need to sync mobile mute button state on load as well
-    const syncMobileMuteButton = () => {
-        const btn = document.getElementById('mobileMuteBtn');
-        if (btn) {
-            const icon = btn.querySelector('i');
-            if (globalMuted) {
-                btn.classList.add('muted');
-                icon.className = 'fa-solid fa-volume-xmark';
-            } else {
-                btn.classList.remove('muted');
-                icon.className = 'fa-solid fa-volume-high';
-            }
-        }
-    };
-    syncMobileMuteButton(); // Call it to set the initial state
-</script>
+        init();
+    </script>
 </body>
 </html>
