@@ -253,6 +253,15 @@
             .mobile-chat .chat-input-area { flex-shrink:0; padding-bottom:env(safe-area-inset-bottom,16px); }
             .upload-indicator { top:16px; left:16px; width:40px; height:40px; }
             .upload-indicator .upload-icon { font-size:0.8rem; }
+
+            /* Adjust combo styles for mobile */
+            .combo-badge { top:80px; font-size:0.85rem; padding:6px 16px; }
+            .combo-icon { font-size:1rem; }
+            .combo-value { font-size:0.95rem; }
+            .combo-milestone { padding:20px 35px; }
+            .combo-milestone-icon { font-size:3rem; }
+            .combo-milestone-title { font-size:1.5rem; }
+            .combo-milestone-subtitle { font-size:1rem; }
         }
 
         /* MODAL */
@@ -282,6 +291,33 @@
         .upload-zone i { font-size:2rem; color:var(--accent); }
         .upload-zone span { color:var(--text-secondary); font-size:0.9rem; }
         .dropdown-divider { height:1px; background:var(--border); margin:4px 0; }
+
+        /* Add combo/streak styles */
+        .combo-badge { position:fixed; top:16px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg, #ff4757 0%, #ff6348 100%); border:2px solid rgba(255,255,255,0.2); border-radius:50px; padding:8px 20px; display:flex; align-items:center; gap:10px; font-weight:700; font-size:1rem; z-index:150; box-shadow:0 4px 20px rgba(255,71,87,0.4); opacity:0; transform:translateX(-50%) scale(0.8); transition:all 0.3s cubic-bezier(0.4,0,0.2,1); }
+        .combo-badge.show { opacity:1; transform:translateX(-50%) scale(1); }
+        .combo-badge.fire { background:linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); border-color:#fff; animation:comboShake 0.5s ease; }
+        .combo-badge.perfect { background:linear-gradient(135deg, #D4AF37 0%, #f0d77c 100%); border-color:#fff; box-shadow:0 4px 30px rgba(212,175,55,0.6); animation:comboShake 0.5s ease, comboPulse 1s ease infinite; }
+        @keyframes comboShake { 0%,100%{transform:translateX(-50%) scale(1)} 25%{transform:translateX(calc(-50% - 3px)) scale(1.05) rotate(-2deg)} 75%{transform:translateX(calc(-50% + 3px)) scale(1.05) rotate(2deg)} }
+        @keyframes comboPulse { 0%,100%{box-shadow:0 4px 30px rgba(212,175,55,0.6)} 50%{box-shadow:0 4px 50px rgba(212,175,55,0.9)} }
+        .combo-icon { font-size:1.2rem; }
+        .combo-text { display:flex; flex-direction:column; align-items:flex-start; }
+        .combo-label { font-size:0.7rem; opacity:0.8; text-transform:uppercase; letter-spacing:1px; }
+        .combo-value { font-size:1.1rem; line-height:1; }
+        .combo-progress { position:absolute; bottom:0; left:0; height:3px; background:rgba(255,255,255,0.4); border-radius:0 0 50px 50px; transition:width 0.3s ease; }
+        
+        .combo-milestone { position:fixed; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); background:linear-gradient(135deg, rgba(255,107,53,0.95) 0%, rgba(247,147,30,0.95) 100%); backdrop-filter:blur(10px); border:3px solid #fff; border-radius:24px; padding:30px 50px; display:flex; flex-direction:column; align-items:center; gap:12px; z-index:200; opacity:0; pointer-events:none; box-shadow:0 20px 60px rgba(0,0,0,0.8); }
+        .combo-milestone.show { animation:milestonePopIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes milestonePopIn { 0%{transform:translate(-50%, -50%) scale(0); opacity:0} 100%{transform:translate(-50%, -50%) scale(1); opacity:1} }
+        .combo-milestone.hide { animation:milestonePopOut 0.3s ease forwards; }
+        @keyframes milestonePopOut { 0%{transform:translate(-50%, -50%) scale(1); opacity:1} 100%{transform:translate(-50%, -50%) scale(0.8); opacity:0} }
+        .combo-milestone-icon { font-size:4rem; animation:fireFlicker 0.5s ease-in-out infinite; }
+        @keyframes fireFlicker { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+        .combo-milestone-title { font-size:2rem; font-weight:800; text-transform:uppercase; letter-spacing:2px; text-shadow:2px 2px 4px rgba(0,0,0,0.3); }
+        .combo-milestone-subtitle { font-size:1.2rem; opacity:0.9; }
+        .combo-milestone-bonus { background:rgba(255,255,255,0.2); border-radius:12px; padding:10px 20px; font-size:1.5rem; font-weight:700; margin-top:8px; }
+        
+        .combo-particles { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:199; }
+        .combo-particle { position:absolute; width:8px; height:8px; background:var(--accent); border-radius:50%; opacity:0; }
     </style>
 </head>
 <body>
@@ -361,6 +397,27 @@
         </div>
     </aside>
 </div>
+
+<!-- Add combo badge -->
+<div class="combo-badge" id="comboBadge">
+    <i class="fas fa-fire combo-icon"></i>
+    <div class="combo-text">
+        <span class="combo-label">Combo</span>
+        <span class="combo-value">x<span id="comboValue">0</span></span>
+    </div>
+    <div class="combo-progress" id="comboProgress"></div>
+</div>
+
+<!-- Add combo milestone popup -->
+<div class="combo-milestone" id="comboMilestone">
+    <i class="fas fa-fire combo-milestone-icon"></i>
+    <div class="combo-milestone-title" id="comboMilestoneTitle">EN FEU!</div>
+    <div class="combo-milestone-subtitle" id="comboMilestoneSubtitle">Combo x5</div>
+    <div class="combo-milestone-bonus" id="comboMilestoneBonus">+20 ELO</div>
+</div>
+
+<!-- Add particle container -->
+<div class="combo-particles" id="comboParticles"></div>
 
 <!-- Mobile Navigation -->
 <nav class="mobile-nav">
@@ -1060,7 +1117,12 @@
             document.getElementById(`inting-${roomId}`).classList.add('active');
         }
 
-        socket.emit('send_vote', { roomId, choice, userId: user.email });
+        socket.emit('send_vote', { 
+            roomId, 
+            choice, 
+            userId: user.email,
+            currentCombo: userCombo 
+        });
     };
 
     // ==========================================
@@ -1073,9 +1135,32 @@
         const mobilePopup = document.getElementById('mobileEloPopup');
         const mobileContainer = document.getElementById('mobileEloBadge');
         
-        if (badge && popup) {
-            const diff = data.elo - user.elo;
+        const diff = data.elo - user.elo;
+        const isCorrect = diff > 0;
+        
+        if (isCorrect) {
+            userCombo++;
+            console.log(`[v0] Combo increased to ${userCombo}`);
             
+            // Check for milestones
+            if (userCombo === 3 || userCombo === 5 || userCombo === 10) {
+                const bonus = calculateComboBonus(userCombo);
+                showComboMilestone(userCombo, bonus);
+            }
+        } else {
+            console.log(`[v0] Combo reset from ${userCombo} to 0`);
+            userCombo = 0;
+        }
+        
+        // Update combo display
+        updateComboDisplay();
+        
+        // Save combo to server and localStorage
+        socket.emit('update_combo', { email: user.email, combo: userCombo });
+        user.combo = userCombo;
+        localStorage.setItem('user_profile', JSON.stringify(user));
+        
+        if (badge && popup) {
             popup.innerText = diff > 0 ? `+${diff}` : diff;
             popup.className = `elo-popup show ${diff > 0 ? 'elo-gain' : 'elo-loss'}`;
             
@@ -1091,8 +1176,6 @@
         }
         
         if (mobileBadge && mobilePopup && mobileContainer) {
-            const diff = data.elo - user.elo;
-            
             mobilePopup.innerText = diff > 0 ? `+${diff}` : diff;
             mobilePopup.className = `mobile-elo-popup show ${diff > 0 ? 'elo-gain' : 'elo-loss'}`;
             
@@ -1843,6 +1926,109 @@
         cancelReply();
     };
 
+    // ==========================================
+    // COMBO LOGIC
+    // ==========================================
+    let userCombo = user.combo || 0;
+    
+    function updateComboDisplay() {
+        const badge = document.getElementById('comboBadge');
+        const value = document.getElementById('comboValue');
+        const progress = document.getElementById('comboProgress');
+        
+        value.innerText = userCombo;
+        
+        if (userCombo > 0) {
+            badge.classList.add('show');
+            
+            // Calculate progress to next milestone
+            let nextMilestone = 3;
+            if (userCombo >= 10) nextMilestone = 15;
+            else if (userCombo >= 5) nextMilestone = 10;
+            else if (userCombo >= 3) nextMilestone = 5;
+            
+            const progressPercent = ((userCombo % nextMilestone) / nextMilestone) * 100;
+            progress.style.width = progressPercent + '%';
+            
+            // Style based on combo level
+            badge.classList.remove('fire', 'perfect');
+            if (userCombo >= 10) {
+                badge.classList.add('perfect');
+            } else if (userCombo >= 5) {
+                badge.classList.add('fire');
+            }
+        } else {
+            badge.classList.remove('show');
+        }
+    }
+    
+    function showComboMilestone(combo, bonus) {
+        const milestone = document.getElementById('comboMilestone');
+        const title = document.getElementById('comboMilestoneTitle');
+        const subtitle = document.getElementById('comboMilestoneSubtitle');
+        const bonusEl = document.getElementById('comboMilestoneBonus');
+        
+        if (combo === 3) {
+            title.innerText = 'NICE!';
+            milestone.style.background = 'linear-gradient(135deg, rgba(255,107,53,0.95) 0%, rgba(247,147,30,0.95) 100%)';
+        } else if (combo === 5) {
+            title.innerText = 'EN FEU!';
+            milestone.style.background = 'linear-gradient(135deg, rgba(255,107,53,0.95) 0%, rgba(247,147,30,0.95) 100%)';
+        } else if (combo === 10) {
+            title.innerText = 'JUGE PARFAIT!';
+            milestone.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.95) 0%, rgba(240,215,124,0.95) 100%)';
+        }
+        
+        subtitle.innerText = `Combo x${combo}`;
+        bonusEl.innerText = `+${bonus} ELO`;
+        
+        milestone.classList.remove('hide');
+        milestone.classList.add('show');
+        
+        // Spawn particles
+        spawnComboParticles();
+        
+        setTimeout(() => {
+            milestone.classList.remove('show');
+            milestone.classList.add('hide');
+        }, 2000);
+    }
+    
+    function spawnComboParticles() {
+        const container = document.getElementById('comboParticles');
+        const colors = ['#D4AF37', '#ff6b35', '#f7931e', '#fff'];
+        
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'combo-particle';
+            particle.style.left = '50%';
+            particle.style.top = '50%';
+            particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+            
+            const angle = (Math.PI * 2 * i) / 30;
+            const velocity = 100 + Math.random() * 150;
+            const tx = Math.cos(angle) * velocity;
+            const ty = Math.sin(angle) * velocity;
+            
+            container.appendChild(particle);
+            
+            particle.animate([
+                { transform: 'translate(0, 0)', opacity: 1 },
+                { transform: `translate(${tx}px, ${ty}px)`, opacity: 0 }
+            ], {
+                duration: 800 + Math.random() * 400,
+                easing: 'cubic-bezier(0, 0.5, 0.5, 1)'
+            }).onfinish = () => particle.remove();
+        }
+    }
+    
+    function calculateComboBonus(combo) {
+        if (combo >= 10) return 30;
+        if (combo >= 5) return 20;
+        if (combo >= 3) return 15;
+        return 10;
+    }
+    
     // INIT
     loadFeed();
     // Need to sync mobile mute button state on load as well
@@ -1860,6 +2046,10 @@
         }
     };
     syncMobileMuteButton(); // Call it to set the initial state
+
+    window.addEventListener('DOMContentLoaded', () => {
+        updateComboDisplay();
+    });
 </script>
 </body>
 </html>
