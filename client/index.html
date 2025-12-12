@@ -173,11 +173,15 @@
         
         /* Video progress bar */
         .video-progress-container { position:absolute; bottom:0; left:0; right:0; height:3px; background:rgba(255,255,255,0.2); z-index:15; cursor:pointer; }
-        .video-progress-bar { height:100%; background:#fff; width:0%; transition:none; border-radius:0 2px 2px 0; pointer-events:none; }
+        .video-progress-bar { height:100%; background:#fff; width:0%; transition:none; border-radius:0 2px 2px 0; pointer-events:none; position:relative; }
+        /* Added progress thumb for better selection */
+        .video-progress-thumb { position:absolute; right:-6px; top:50%; transform:translateY(-50%); width:12px; height:12px; background:#fff; border-radius:50%; opacity:0; transition:opacity 0.2s; pointer-events:none; }
         .video-progress-container:hover { height:6px; }
         .video-progress-container:hover .video-progress-bar { background:var(--accent); }
+        .video-progress-container:hover .video-progress-thumb { opacity:1; background:var(--accent); }
         .video-progress-container.dragging { height:8px; }
         .video-progress-container.dragging .video-progress-bar { background:var(--accent); }
+        .video-progress-container.dragging .video-progress-thumb { opacity:1; background:var(--accent); width:16px; height:16px; right:-8px; }
         
         /* 2x Speed indicator */
         .speed-indicator { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%) scale(0); background:rgba(0,0,0,0.7); border-radius:12px; padding:10px 18px; display:flex; align-items:center; gap:8px; font-size:0.9rem; font-weight:600; color:#fff; pointer-events:none; opacity:0; z-index:25; transition:all 0.2s ease; }
@@ -201,12 +205,19 @@
         .mobile-elo-popup { position:absolute; top:-30px; left:50%; transform:translateX(-50%); font-weight:bold; font-size:0.85rem; opacity:0; pointer-events:none; transition:0.5s; white-space:nowrap; }
         .mobile-elo-popup.show { top:-35px; opacity:1; }
         
+        /* Mobile mute button */
+        .mobile-mute-btn { position:fixed; top:16px; left:16px; width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,0.5); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.15); display:none; align-items:center; justify-content:center; font-size:1rem; color:#fff; cursor:pointer; z-index:50; transition:0.2s; }
+        .mobile-mute-btn.muted { color:var(--text-secondary); }
+        
         /* Hide mobile chat elements on desktop */
         .mobile-chat { display:none; }
         @media (max-width: 768px) {
             .app-layout { grid-template-columns:1fr; grid-template-rows:1fr; } 
             .header, .chat-sidebar { display:none; }
             .mobile-elo-badge { display:block; }
+            /* Show mobile mute button */
+            .mobile-mute-btn { display:flex; }
+            .mute-btn { display:none; }
             .mobile-nav { display:block; position:fixed; bottom:0; width:100%; height:70px; background:rgba(0,0,0,0.95); backdrop-filter:blur(20px); border-top:1px solid var(--border); z-index:100; padding-bottom:env(safe-area-inset-bottom); }
             .nav-items { display:flex; justify-content:space-around; align-items:center; height:100%; max-width:400px; margin:0 auto; }
             .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--text-secondary); cursor:pointer; font-size:1.3rem; padding:8px; }
@@ -279,6 +290,11 @@
 <div class="mobile-elo-badge" id="mobileEloBadge">
     <span id="mobileEloValue">1000</span>
     <div class="mobile-elo-popup" id="mobileEloPopup">+10</div>
+</div>
+
+<!-- Added mobile mute button -->
+<div class="mobile-mute-btn muted" id="mobileMuteBtn" onclick="toggleMobileMute()">
+    <i class="fa-solid fa-volume-xmark"></i>
 </div>
 
 <div class="app-layout" id="appLayout">
@@ -464,7 +480,7 @@
                 <div class="pause-indicator"><i class="fa-solid fa-pause"></i></div>
                 <div class="speed-indicator"><i class="fa-solid fa-forward-fast"></i> 2x</div>
                 <div class="video-progress-container">
-                    <div class="video-progress-bar"></div>
+                    <div class="video-progress-bar"><div class="video-progress-thumb"></div></div>
                 </div>`;
     }
 
@@ -491,8 +507,46 @@
                 icon.className = 'fa-solid fa-volume-high';
             }
         });
+        
+        updateMobileMuteBtn();
     };
-
+    
+    window.toggleMobileMute = () => {
+        globalMuted = !globalMuted;
+        localStorage.setItem('videoMuted', globalMuted ? 'true' : 'false');
+        
+        document.querySelectorAll('.video-slide video').forEach(video => {
+            video.muted = globalMuted;
+        });
+        
+        document.querySelectorAll('.mute-btn').forEach(muteBtn => {
+            const icon = muteBtn.querySelector('i');
+            if (globalMuted) {
+                muteBtn.classList.add('muted');
+                icon.className = 'fa-solid fa-volume-xmark';
+            } else {
+                muteBtn.classList.remove('muted');
+                icon.className = 'fa-solid fa-volume-high';
+            }
+        });
+        
+        updateMobileMuteBtn();
+    };
+    
+    function updateMobileMuteBtn() {
+        const btn = document.getElementById('mobileMuteBtn');
+        if (btn) {
+            const icon = btn.querySelector('i');
+            if (globalMuted) {
+                btn.classList.add('muted');
+                icon.className = 'fa-solid fa-volume-xmark';
+            } else {
+                btn.classList.remove('muted');
+                icon.className = 'fa-solid fa-volume-high';
+            }
+        }
+    }
+    
     // ==========================================
     // TAP TO PAUSE & 2X SPEED
     function setupTapToPause(slide) {
@@ -502,6 +556,7 @@
         const speedIndicator = slide.querySelector('.speed-indicator');
         const progressContainer = slide.querySelector('.video-progress-container');
         const progressBar = slide.querySelector('.video-progress-bar');
+        const progressThumb = slide.querySelector('.video-progress-thumb'); // Get the thumb
         const muteBtn = slide.querySelector('.mute-btn');
         
         if (!video) return;
@@ -518,6 +573,8 @@
                 const percent = Math.max(0, Math.min(1, x / rect.width));
                 video.currentTime = percent * video.duration;
                 progressBar.style.width = (percent * 100) + '%';
+                // Update thumb position as well
+                progressThumb.style.left = (percent * 100) + '%';
             };
 
             progressContainer.addEventListener('mousedown', (e) => {
@@ -696,10 +753,18 @@
                 const createdDate = room.createdAt ? new Date(room.createdAt) : new Date(room.updatedAt);
                 const formattedDate = formatDate(createdDate);
                 
-                const creatorAvatar = room.creatorAvatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
-                const creatorName = room.creatorPseudo || room.creatorName || 'Anonyme';
+                const creatorAvatar = room.creatorAvatar || room.ownerAvatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+                const creatorName = room.creatorPseudo || room.creatorName || room.ownerPseudo || room.ownerName || 'Joueur';
                 const creatorEmail = room.ownerEmail || '';
                 const videoDescription = room.videoDescription || '';
+                
+                console.log("[v0] Room creator info:", { 
+                    slug: room.slug, 
+                    creatorAvatar, 
+                    creatorName, 
+                    ownerEmail: room.ownerEmail,
+                    rawRoom: room 
+                });
                 
                 const slide = document.createElement('div');
                 slide.className = 'video-slide';
@@ -747,9 +812,11 @@
                 if (video) {
                     video.addEventListener('timeupdate', () => {
                         const progressBar = slide.querySelector('.video-progress-bar');
+                        const progressThumb = slide.querySelector('.video-progress-thumb'); // Get thumb
                         if (progressBar && !slide.querySelector('.video-progress-container').classList.contains('dragging')) {
                             const percent = (video.currentTime / video.duration) * 100;
                             progressBar.style.width = percent + '%';
+                            progressThumb.style.left = percent + '%'; // Update thumb position
                         }
                     });
                 }
@@ -796,6 +863,7 @@
                     const video = entry.target.querySelector('video');
                     const pauseIndicator = entry.target.querySelector('.pause-indicator');
                     const progressBar = entry.target.querySelector('.video-progress-bar');
+                    const progressThumb = entry.target.querySelector('.video-progress-thumb'); // Get thumb
                     
                     if (video) { 
                         video.pause(); 
@@ -807,6 +875,7 @@
                     }
                     if (pauseIndicator) pauseIndicator.classList.remove('show', 'hide-anim');
                     if (progressBar) progressBar.style.width = '0%';
+                    if (progressThumb) progressThumb.style.left = '0%'; // Reset thumb position
                 }
             });
         }, { threshold: 0.5 });
@@ -833,32 +902,30 @@
             const validBtn = document.getElementById(`valid-${data.roomId}`)?.parentElement;
             const intingBtn = document.getElementById(`inting-${data.roomId}`)?.parentElement;
 
-            if (validCounter && intingCounter) {
-                validCounter.innerText = data.votes.valid;
-                intingCounter.innerText = data.votes.inting;
-
-                if (data.myVote) {
-                    validCounter.classList.remove('blind');
-                    intingCounter.classList.remove('blind');
-                    validBtn.classList.add('disabled');
-                    intingBtn.classList.add('disabled');
-                    
-                    if (data.myVote === 'valid') {
-                        validBtn.classList.add('selected');
-                        document.getElementById(`valid-${data.roomId}`).classList.add('active');
-                    } else {
-                        intingBtn.classList.add('selected');
-                        document.getElementById(`inting-${data.roomId}`).classList.add('active');
-                    }
+            if (data.myVote) {
+                validCounter.classList.remove('blind');
+                intingCounter.classList.remove('blind');
+                validBtn.classList.add('disabled');
+                intingBtn.classList.add('disabled');
+                
+                if (data.myVote === 'valid') {
+                    validBtn.classList.add('selected');
+                    document.getElementById(`valid-${data.roomId}`).classList.add('active');
                 } else {
-                    validCounter.classList.add('blind');
-                    intingCounter.classList.add('blind');
-                    validBtn.classList.remove('disabled', 'selected');
-                    intingBtn.classList.remove('disabled', 'selected');
-                    document.getElementById(`valid-${data.roomId}`).classList.remove('active');
-                    document.getElementById(`inting-${data.roomId}`).classList.remove('active');
+                    intingBtn.classList.add('selected');
+                    document.getElementById(`inting-${data.roomId}`).classList.add('active');
                 }
+            } else {
+                validCounter.classList.add('blind');
+                intingCounter.classList.add('blind');
+                validBtn.classList.remove('disabled', 'selected');
+                intingBtn.classList.remove('disabled', 'selected');
+                document.getElementById(`valid-${data.roomId}`).classList.remove('active');
+                document.getElementById(`inting-${data.roomId}`).classList.remove('active');
             }
+            
+            if(validCounter) validCounter.innerText = data.votes.valid;
+            if(intingCounter) intingCounter.innerText = data.votes.inting;
         }
     });
 
@@ -1100,69 +1167,66 @@
         container.appendChild(div);
     }
 
+    // Updated socket.on('receive_message') to handle replies correctly in both desktop and mobile chats
     socket.on('receive_message', (msg) => {
         if (msg.roomId === currentRoomId) {
             const deskList = document.getElementById('desktopChatMessages');
             const mobileList = document.getElementById('mobileChatMessages');
             
-            // If this is a reply, add it to the parent's replies dropdown
             if (msg.replyTo) {
-                const parentMsg = document.getElementById(`msg-${msg.replyTo}`);
-                if (parentMsg) {
-                    // Find or create the replies container
-                    let repliesToggle = parentMsg.querySelector('.msg-replies-toggle');
-                    let repliesContainer = parentMsg.querySelector('.msg-replies-container');
-                    
-                    if (!repliesContainer) {
-                        // Create the replies dropdown
-                        const repliesHTML = `
-                            <div class="msg-replies-toggle" onclick="toggleReplies(this)">
-                                <i class="fa-solid fa-chevron-down"></i>
-                                <span>Voir 1 reponse</span>
-                            </div>
-                            <div class="msg-replies-container expanded">
+                // Find parent message in both desktop and mobile
+                [deskList, mobileList].forEach(list => {
+                    if (!list) return;
+                    const parentMsg = list.querySelector(`#msg-${msg.replyTo}`);
+                    if (parentMsg) {
+                        let repliesToggle = parentMsg.querySelector('.msg-replies-toggle');
+                        let repliesContainer = parentMsg.querySelector('.msg-replies-container');
+                        
+                        if (!repliesContainer) {
+                            const repliesHTML = `
+                                <div class="msg-replies-toggle expanded" onclick="toggleReplies(this)">
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                    <span>Voir 1 reponse</span>
+                                </div>
+                                <div class="msg-replies-container expanded"></div>
+                            `;
+                            parentMsg.insertAdjacentHTML('beforeend', repliesHTML);
+                            repliesToggle = parentMsg.querySelector('.msg-replies-toggle');
+                            repliesContainer = parentMsg.querySelector('.msg-replies-container');
+                        }
+                        
+                        const replyAvatarUrl = msg.avatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+                        const replyHTML = `
+                            <div class="msg-reply-item" id="msg-${msg._id}">
+                                <div class="msg-header">
+                                    <div class="msg-avatar" style="background-image:url('${replyAvatarUrl}')"></div>
+                                    <span class="msg-author">${msg.username}</span>
+                                </div>
+                                <div class="msg-text">${msg.text}</div>
+                                <div class="msg-actions" style="padding-left:30px;">
+                                    <button class="msg-action-btn" id="like-btn-${msg._id}" onclick="toggleLikeMessage('${msg._id}', '${msg.roomId}')">
+                                        <i class="fa-regular fa-heart"></i>
+                                        <span class="msg-like-count" id="like-count-${msg._id}"></span>
+                                    </button>
+                                    <button class="msg-action-btn" onclick="startReply('${msg.replyTo}', '${msg.username}', '${(msg.text || '').replace(/'/g, "\\'").substring(0, 50)}')">
+                                        <i class="fa-regular fa-comment"></i>
+                                        <span>Repondre</span>
+                                    </button>
+                                </div>
                             </div>
                         `;
-                        parentMsg.insertAdjacentHTML('beforeend', repliesHTML);
-                        repliesToggle = parentMsg.querySelector('.msg-replies-toggle');
-                        repliesContainer = parentMsg.querySelector('.msg-replies-container');
+                        repliesContainer.insertAdjacentHTML('beforeend', replyHTML);
+                        
+                        const countSpan = repliesToggle.querySelector('span');
+                        const currentCount = repliesContainer.querySelectorAll('.msg-reply-item').length;
+                        countSpan.innerText = `Voir ${currentCount} reponse${currentCount > 1 ? 's' : ''}`;
+                        
+                        repliesContainer.classList.add('expanded');
                         repliesToggle.classList.add('expanded');
                     }
-                    
-                    // Add the new reply to the container
-                    const replyAvatarUrl = msg.avatar || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
-                    const replyHTML = `
-                        <div class="msg-reply-item" id="msg-${msg._id}">
-                            <div class="msg-header">
-                                <div class="msg-avatar" style="background-image:url('${replyAvatarUrl}')"></div>
-                                <span class="msg-author">${msg.username}</span>
-                            </div>
-                            <div class="msg-text">${msg.text}</div>
-                            <div class="msg-actions" style="padding-left:30px;">
-                                <button class="msg-action-btn" id="like-btn-${msg._id}" onclick="toggleLikeMessage('${msg._id}', '${msg.roomId}')">
-                                    <i class="fa-regular fa-heart"></i>
-                                    <span class="msg-like-count" id="like-count-${msg._id}"></span>
-                                </button>
-                                <button class="msg-action-btn" onclick="startReply('${msg.replyTo}', '${msg.username}', \`${(msg.text || '').replace(/`/g, "'").replace(/\\/g, "\\\\").substring(0, 50)}\`)">
-                                    <i class="fa-regular fa-comment"></i>
-                                    <span>Repondre</span>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    repliesContainer.insertAdjacentHTML('beforeend', replyHTML);
-                    
-                    // Update the count
-                    const countSpan = repliesToggle.querySelector('span');
-                    const currentCount = repliesContainer.querySelectorAll('.msg-reply-item').length;
-                    countSpan.innerText = `Voir ${currentCount} reponse${currentCount > 1 ? 's' : ''}`;
-                    
-                    // Auto-expand to show the new reply
-                    repliesContainer.classList.add('expanded');
-                    repliesToggle.classList.add('expanded');
-                }
+                });
             } else {
-                // Regular message - add normally
+                // Regular message - add normally to both lists
                 if (deskList && deskList.dataset.room === msg.roomId) {
                     addMessageToUI(deskList, msg, false);
                     deskList.scrollTop = deskList.scrollHeight;
@@ -1183,6 +1247,20 @@
             }
         }
     });
+    
+    socket.on('message_liked', (data) => {
+        console.log("[v0] Message liked event:", data);
+        const btn = document.getElementById(`like-btn-${data.messageId}`);
+        const countEl = document.getElementById(`like-count-${data.messageId}`);
+        
+        if (btn && countEl) {
+            const isLiked = data.likes.includes(user.email);
+            btn.className = `msg-action-btn ${isLiked ? 'liked' : ''}`;
+            btn.querySelector('i').className = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+            countEl.innerText = data.likes.length > 0 ? data.likes.length : '';
+        }
+    });
+
     // ==========================================
     // UI HELPERS
     // ==========================================
@@ -1231,6 +1309,10 @@
     window.closeMobileChat = () => {
         document.getElementById('mobileChat').classList.remove('open');
         document.getElementById('mobileChatOverlay').classList.remove('open');
+        // Clear the current room ID when closing mobile chat to avoid sending messages to the wrong room
+        // This might need adjustment depending on desired behavior (e.g., if a user navigates away)
+        // For now, let's not reset it, assuming the user might want to reopen it to the same chat.
+        // currentRoomId = null; 
     };
 
     // Mobile chat swipe to close
@@ -1242,29 +1324,36 @@
         let isDragging = false;
 
         mobileChat.addEventListener('touchstart', (e) => {
-            if (e.target.closest('.mobile-chat-drag-handle') || e.target.closest('.mobile-chat-header')) { // Allow dragging from handle or header
+            // Check if the touch is on the drag handle or header, or if the chat is scrolled to the top
+            const isHandleOrHeader = e.target.closest('.mobile-chat-drag-handle') || e.target.closest('.mobile-chat-header');
+            const isScrolledToTop = chatMessages.scrollTop <= 0;
+
+            if (isHandleOrHeader || (isScrolledToTop && e.cancelable)) { // Only allow drag if it's the handle/header or if scroll is at top and touch is cancelable
                 startY = e.touches[0].clientY;
                 isDragging = true;
-            } else if (chatMessages.scrollTop <= 0) { // Only allow dragging if scrolled to top
-                 startY = e.touches[0].clientY;
-                 isDragging = true;
+                // Prevent default scroll if we are starting a drag action
+                if (isHandleOrHeader) e.preventDefault(); 
             }
-        }, { passive: true });
+        }, { passive: false }); // Use passive: false to allow preventDefault
 
         mobileChat.addEventListener('touchmove', (e) => {
             if (!isDragging) return;
             currentY = e.touches[0].clientY;
             const diff = currentY - startY;
-            if (diff > 0 && chatMessages.scrollTop <= 0) { // Only apply transform if scrolling down and at the top
+            // Only apply transform if scrolling down and at the top, and if the touch is not on an input field
+            if (diff > 0 && chatMessages.scrollTop <= 0 && !e.target.closest('input, textarea')) { 
                 mobileChat.style.transform = `translateY(${diff}px)`;
+                e.preventDefault(); // Prevent background scrolling
             }
-        }, { passive: true });
+        }, { passive: false });
 
         mobileChat.addEventListener('touchend', () => {
             if (!isDragging) return;
             isDragging = false;
             const diff = currentY - startY;
-            if (diff > 100) closeMobileChat();
+            if (diff > 100) { // Threshold for closing
+                closeMobileChat();
+            }
             mobileChat.style.transform = ''; // Reset transform
         });
     })();
@@ -1334,23 +1423,29 @@
                 const container = document.getElementById('feedScroll');
                 const createdDate = new Date();
                 const formattedDate = formatDate(createdDate);
-                const creatorAvatar = userAvatarUrl;
-                const creatorName = user.pseudo || user.given_name || user.name;
+                const creatorAvatar = user.avatar || user.picture || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+                const creatorName = user.pseudo || user.given_name || user.name || 'Joueur';
+                
+                console.log("[v0] Creating new slide with creator:", { creatorAvatar, creatorName, userEmail: user.email });
                 
                 const newSlide = document.createElement('div');
                 newSlide.className = 'video-slide';
                 newSlide.dataset.slug = slug;
                 newSlide.id = `room-${slug}`;
                 
+                const mutedAttr = globalMuted ? 'muted' : '';
+                const muteIcon = globalMuted ? 'fa-volume-xmark' : 'fa-volume-high';
+                const muteClass = globalMuted ? 'muted' : '';
+                
                 newSlide.innerHTML = `
                     <div class="video-container">
-                        <video src="${pendingRoomData.videoUrl}" loop playsinline muted></video>
+                        <video src="${pendingRoomData.videoUrl}" loop playsinline ${mutedAttr}></video>
+                        <div class="mute-btn ${muteClass}" onclick="toggleMute(event, this)"><i class="fa-solid ${muteIcon}"></i></div>
                         <div class="pause-indicator"><i class="fa-solid fa-pause"></i></div>
                         <div class="speed-indicator"><i class="fa-solid fa-forward-fast"></i> 2x</div>
                         <div class="video-progress-container">
-                            <div class="video-progress-bar"></div>
+                            <div class="video-progress-bar"><div class="video-progress-thumb"></div></div>
                         </div>
-                        <div class="mute-btn" onclick="toggleMute(event, this)"><i class="fa-solid fa-volume-high"></i></div>
                     </div>
                     <div class="video-info">
                         <span class="video-game-tag"><i class="fa-solid fa-gamepad"></i> ${pendingRoomData.game}</span>
@@ -1389,7 +1484,7 @@
                 
                 const video = newSlide.querySelector('video');
                 if (video) {
-                    video.play().catch(() => {}); // Autoplay might be prevented by browser
+                    video.play().catch(() => {});
                     video.addEventListener('timeupdate', () => {
                         const progressBar = newSlide.querySelector('.video-progress-bar');
                         if (progressBar && !newSlide.querySelector('.video-progress-container').classList.contains('dragging')) {
@@ -1574,6 +1669,7 @@
     
     // Socket listener for like updates
     socket.on('message_liked', (data) => {
+        console.log("[v0] Message liked event:", data);
         const btn = document.getElementById(`like-btn-${data.messageId}`);
         const countEl = document.getElementById(`like-count-${data.messageId}`);
         
@@ -1644,6 +1740,21 @@
 
     // INIT
     loadFeed();
+    // Need to sync mobile mute button state on load as well
+    const syncMobileMuteButton = () => {
+        const btn = document.getElementById('mobileMuteBtn');
+        if (btn) {
+            const icon = btn.querySelector('i');
+            if (globalMuted) {
+                btn.classList.add('muted');
+                icon.className = 'fa-solid fa-volume-xmark';
+            } else {
+                btn.classList.remove('muted');
+                icon.className = 'fa-solid fa-volume-high';
+            }
+        }
+    };
+    syncMobileMuteButton(); // Call it to set the initial state
 </script>
 </body>
 </html>
