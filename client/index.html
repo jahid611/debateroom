@@ -1333,7 +1333,17 @@
             alert("Veuillez ajouter un titre a votre debat");
             return;
         }
+        
+        const hasFile = uploadMode === 'file' && fileInput.files && fileInput.files.length > 0;
+        const hasLink = uploadMode === 'link' && link.trim();
+        
+        if (!hasFile && !hasLink) {
+            alert("Ajoutez une video ou un lien !");
+            return;
+        }
 
+        const selectedFile = hasFile ? fileInput.files[0] : null;
+        
         closeCreateModal();
         showUploadIndicator();
         isCreatorUpload = true;
@@ -1341,9 +1351,9 @@
         try {
             let videoUrl = '';
 
-            if (uploadMode === 'file' && fileInput.files.length > 0) {
+            if (selectedFile) {
                 const formData = new FormData();
-                formData.append('video', fileInput.files[0]);
+                formData.append('video', selectedFile);
 
                 const uploadRes = await fetch('https://debateroom-u1gz.onrender.com/api/upload/video', {
                     method: 'POST',
@@ -1353,7 +1363,7 @@
                 if (!uploadRes.ok) throw new Error('Upload failed');
                 const uploadData = await uploadRes.json();
                 videoUrl = uploadData.url;
-            } else if (uploadMode === 'link' && link) {
+            } else if (hasLink) {
                 if (link.includes('youtube.com') || link.includes('youtu.be')) {
                     const ytId = link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/)?.[1];
                     videoUrl = ytId ? `https://www.youtube.com/embed/${ytId}` : link;
@@ -1363,10 +1373,6 @@
                 } else {
                     videoUrl = link;
                 }
-            } else {
-                hideUploadIndicator();
-                alert("Ajoutez une video ou un lien !");
-                return;
             }
 
             const createRes = await fetch('https://debateroom-u1gz.onrender.com/api/rooms/create', {
