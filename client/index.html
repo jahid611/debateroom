@@ -1355,7 +1355,7 @@
                 const formData = new FormData();
                 formData.append('videoFile', selectedFile);
 
-                const uploadRes = await fetch('https://debateroom-u1gz.onrender.com/api/upload', {
+                const uploadRes = await fetch('https://debateroom-u1gz.onrender.com/api/video/upload', {
                     method: 'POST',
                     body: formData
                 });
