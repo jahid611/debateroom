@@ -201,7 +201,9 @@
         .mobile-elo-popup { position:absolute; top:-30px; left:50%; transform:translateX(-50%); font-weight:bold; font-size:0.85rem; opacity:0; pointer-events:none; transition:0.5s; white-space:nowrap; }
         .mobile-elo-popup.show { top:-35px; opacity:1; }
         
-        @media(max-width:900px) {
+        /* Hide mobile chat elements on desktop */
+        .mobile-chat { display:none; }
+        @media (max-width: 768px) {
             .app-layout { grid-template-columns:1fr; grid-template-rows:1fr; } 
             .header, .chat-sidebar { display:none; }
             .mobile-elo-badge { display:block; }
@@ -222,7 +224,8 @@
             .action-circle { width:40px; height:40px; font-size:1rem; }
             .action-count { font-size:0.65rem; }
             .pause-indicator { width:60px; height:60px; font-size:1.5rem; }
-            .mobile-chat { position:fixed; bottom:0; width:100%; height:75vh; background:var(--surface); border-radius:24px 24px 0 0; z-index:200; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; touch-action:none; }
+            
+            .mobile-chat { display:flex; position:fixed; bottom:0; width:100%; height:75vh; background:var(--surface); border-radius:24px 24px 0 0; z-index:200; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); flex-direction:column; touch-action:none; }
             .mobile-chat.open { transform:translateY(0); }
             .mobile-chat .chat-messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; min-height:0; }
             .mobile-chat-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:199; opacity:0; visibility:hidden; transition:0.3s; }
